@@ -1,1 +1,132 @@
 @import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+/* Kill all CSS animations when effects are disabled */
+[data-animations="false"] * {
+  animation: none !important;
+  transition-duration: 0.05s !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Montserrat', sans-serif;
+  overflow: hidden;
+}
+
+/* Thin purple scrollbar */
+::-webkit-scrollbar {
+  width: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.35);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-18px) scale(1.04); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-24px) rotate(6deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeSlideIn 0.25s ease forwards;
+}
+
+/* ─── Hover utilities ────────────────────────────────────────────────────── */
+
+/* Panels — subtle glow deepens */
+.panel-hover {
+  transition: box-shadow 0.25s ease;
+}
+.panel-hover:hover {
+  box-shadow: 0 16px 56px rgba(0,0,0,0.45), 0 0 0 1px rgba(139,92,246,0.22) !important;
+}
+
+/* Cards (tier KPI, slot counters) — lift off the surface */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.4) !important;
+}
+
+/* Sidebar stat rows — background brightens */
+.stat-hover {
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.stat-hover:hover {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* Leaderboard rows (#4+) — slide right */
+.row-hover {
+  transition: background 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.row-hover:hover {
+  background: rgba(139,92,246,0.1) !important;
+  transform: translateX(3px);
+}
+
+/* Leaderboard podium cards — lift */
+.podium-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.podium-hover:hover {
+  transform: translateY(-5px) scale(1.02);
+}
+
+/* Live steal items — background tint */
+.steal-hover {
+  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: default;
+}
+.steal-hover:hover {
+  background: rgba(139,92,246,0.12) !important;
+  border-left-color: rgba(168,85,247,0.8) !important;
+}
+
+/* Balance card — glow pulse on hover */
+.balance-hover {
+  transition: box-shadow 0.25s ease;
+}
+.balance-hover:hover {
+  box-shadow: 0 6px 28px rgba(109,40,217,0.35), 0 0 0 1px rgba(139,92,246,0.4) !important;
+}
