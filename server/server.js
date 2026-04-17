@@ -13,13 +13,16 @@ import supabase from './db.js'
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// CORS — only allow requests from the frontend
-const allowedOrigin = (process.env.CLIENT_URL || '').replace(/\/$/, '')
+// CORS — allow frontend origin(s)
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-to-server (no origin) or exact CLIENT_URL match
-    if (!origin || origin === allowedOrigin) return callback(null, true)
-    callback(new Error(`CORS blocked: ${origin}`))
+    // Allow server-to-server calls (no origin header)
+    if (!origin) return callback(null, true)
+    // Allow any grandnotifier.online subdomain/root + localhost for dev
+    if (origin.endsWith('grandnotifier.online') || origin.startsWith('http://localhost')) {
+      return callback(null, true)
+    }
+    callback(null, false)
   },
   credentials: true,
 }))
