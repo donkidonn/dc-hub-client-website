@@ -472,6 +472,16 @@ local function parseValue(str)
     return math.floor(n)
 end
 
+-- Map raw_value string → in-game TIER key (for card display)
+local function getTierKey(raw_value, rarity)
+    if rarity and rarity:upper() == "OG" then return "og" end
+    local v = parseValue(raw_value or "")
+    if v >= 1000000000 then return "beyondbest" end
+    if v >= 150000000  then return "big"         end
+    if v >= 50000000   then return "high"        end
+    return "low"
+end
+
 -- Map rarity + value/s → website DB tier
 -- Returns nil if below threshold (don't log)
 local function getDbTier(rarity, valuePerSec)
@@ -607,7 +617,7 @@ local lastSeenId    = 0
 
 -- Create card
 local function createCard(data, index)
-    local tierKey = data.tier or "low"
+    local tierKey = getTierKey(data.raw_value, data.rarity)
     local t = TIER[tierKey] or TIER.low
 
     local card = Instance.new("Frame")
@@ -755,7 +765,7 @@ local function renderCards()
     local query = currentSearch:lower()
     local count = 0
     for i, d in ipairs(sessionData) do
-        local okTier   = tierMatchesFilter(d.tier, currentFilter)
+        local okTier   = tierMatchesFilter(getTierKey(d.raw_value, d.rarity), currentFilter)
         local okSearch = query == "" or (d.name and d.name:lower():find(query, 1, true))
         local okValue  = parseValue(d.raw_value or "") >= 15000000
         if okTier and okSearch and okValue then
@@ -775,10 +785,11 @@ local function updateStats()
     local c = { total=0, session=0, low=0, high=0 }
     for _, d in ipairs(sessionData) do
         if parseValue(d.raw_value or "") >= 15000000 then
+            local tk = getTierKey(d.raw_value, d.rarity)
             c.total   = c.total + 1
             c.session = c.session + 1
-            if d.tier == "low"  then c.low  = c.low  + 1 end
-            if d.tier == "high" then c.high = c.high + 1 end
+            if tk == "low"  then c.low  = c.low  + 1 end
+            if tk == "high" then c.high = c.high + 1 end
         end
     end
     statNums.total.Text   = tostring(c.total)

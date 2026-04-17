@@ -232,4 +232,57 @@ router.post('/webhook', async (req, res) => {
   }
 })
 
+// POST /api/balance/redeem — redeem a coupon code
+router.post('/redeem', requireAuth, async (req, res) => {
+  const { code } = req.body
+  if (!code) return res.status(400).json({ error: 'Code is required' })
+
+  // Find coupon
+  const { data: coupon } = await supabase
+    .from('coupons')
+    .select('id, amount, max_uses, uses, expires_at')
+    .eq('code', code.trim().toUpperCase())
+    .maybeSingle()
+
+  if (!coupon) return res.status(404).json({ error: 'Invalid code' })
+
+  // Check expiry
+  if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'This code has expired' })
+  }
+
+  // Check uses
+  if (coupon.uses >= coupon.max_uses) {
+    return res.status(400).json({ error: 'This code has already been fully redeemed' })
+  }
+
+  // Check if user already redeemed this code
+  const { data: existing } = await supabase
+    .from('coupon_redemptions')
+    .select('id')
+    .eq('coupon_id', coupon.id)
+    .eq('user_id', req.user.id)
+    .maybeSingle()
+
+  if (existing) return res.status(400).json({ error: 'You have already redeemed this code' })
+
+  // Credit balance
+  const { data: user } = await supabase
+    .from('users')
+    .select('balance')
+    .eq('id', req.user.id)
+    .single()
+
+  await supabase
+    .from('users')
+    .update({ balance: Number(user.balance) + Number(coupon.amount) })
+    .eq('id', req.user.id)
+
+  // Record redemption + increment uses
+  await supabase.from('coupon_redemptions').insert({ coupon_id: coupon.id, user_id: req.user.id })
+  await supabase.from('coupons').update({ uses: coupon.uses + 1 }).eq('id', coupon.id)
+
+  res.json({ amount: coupon.amount })
+})
+
 export default router

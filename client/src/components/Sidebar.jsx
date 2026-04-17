@@ -106,8 +106,23 @@ function Avatar({ avatarUrl }) {
 
 export default function Sidebar({ activePage, onNavigate }) {
   const { animationsEnabled, toggleAnimations } = useContext(AnimationContext)
-  const { user: authUser } = useUser()
-  const [showDeposit, setShowDeposit] = useState(false)
+  const { user: authUser, refreshUser } = useUser()
+  const [showDeposit, setShowDeposit]   = useState(false)
+  const [couponCode, setCouponCode]     = useState('')
+  const [couponState, setCouponState]   = useState(null) // null | 'loading' | { ok, msg }
+
+  async function handleRedeem() {
+    if (!couponCode.trim()) return
+    setCouponState('loading')
+    try {
+      const data = await api.post('/api/balance/redeem', { code: couponCode.trim() })
+      setCouponState({ ok: true, msg: `+$${Number(data.amount).toFixed(2)} added!` })
+      setCouponCode('')
+      refreshUser()
+    } catch (err) {
+      setCouponState({ ok: false, msg: err.message })
+    }
+  }
 
   const { data: mySlot } = useQuery({
     queryKey: ['slots', 'my-slot'],
@@ -258,6 +273,41 @@ export default function Sidebar({ activePage, onNavigate }) {
       </div>
 
       {showDeposit && <DepositModal onClose={() => setShowDeposit(false)} />}
+
+      {/* Redeem coupon */}
+      <div className="mx-3 mb-3">
+        <div className="flex gap-1.5">
+          <input
+            type="text"
+            placeholder="Redeem code..."
+            value={couponCode}
+            onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponState(null) }}
+            onKeyDown={e => e.key === 'Enter' && handleRedeem()}
+            maxLength={32}
+            className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold text-white placeholder:text-gray-600 outline-none"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(139,92,246,0.2)' }}
+          />
+          <button
+            onClick={handleRedeem}
+            disabled={couponState === 'loading' || !couponCode.trim()}
+            className="px-3 py-1.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all"
+            style={{
+              background: 'linear-gradient(135deg,rgba(109,40,217,0.6),rgba(124,58,237,0.4))',
+              border: '1px solid rgba(139,92,246,0.35)',
+              color: couponCode.trim() ? '#c4b5fd' : 'rgba(196,181,253,0.3)',
+              cursor: couponCode.trim() ? 'pointer' : 'default',
+            }}
+          >
+            {couponState === 'loading' ? '...' : 'Apply'}
+          </button>
+        </div>
+        {couponState && couponState !== 'loading' && (
+          <p className="text-[10px] font-semibold mt-1 px-1"
+            style={{ color: couponState.ok ? '#34d399' : '#f87171' }}>
+            {couponState.msg}
+          </p>
+        )}
+      </div>
 
       {/* Stats */}
       <div className="mx-3 flex flex-col gap-1">
