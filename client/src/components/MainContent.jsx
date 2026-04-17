@@ -100,7 +100,7 @@ function EmptyBrainrotCard({ rank }) {
 
 function TopStealsContent({ topItems = [] }) {
   return (
-    <div className="flex flex-col h-full gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 flex-shrink-0">
         <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
         <span className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: 'rgba(196,181,253,0.35)' }}>
@@ -617,7 +617,7 @@ export default function MainContent() {
 
         {/* Left column */}
         <div className="flex flex-col gap-3 md:gap-4 lg:flex-1 lg:min-h-0">
-          <Panel title="Top 3 Steals" accent="#f472b6" className="lg:flex-1">
+          <Panel title="Top 3 Steals" accent="#f472b6">
             <TopStealsContent topItems={topItems} />
           </Panel>
           <Panel title="Steal History" accent="#7c3aed" className="lg:flex-1">
