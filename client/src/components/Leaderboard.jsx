@@ -41,6 +41,14 @@ function RankBadge({ rank }) {
   )
 }
 
+function formatAmount(n) {
+  if (!n) return '?'
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(n % 1_000_000_000 === 0 ? 0 : 1)}B/s`
+  if (n >= 1_000_000)     return `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M/s`
+  if (n >= 1_000)         return `$${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K/s`
+  return `$${n}/s`
+}
+
 function MiniTopSteals({ steals, stack = false }) {
   if (!steals?.length) return null
   return (
@@ -58,7 +66,7 @@ function MiniTopSteals({ steals, stack = false }) {
               style={{ background: `${color}0e`, border: `1px solid ${color}25`, flex: stack ? undefined : '1' }}>
               <span className="text-[9px] font-black flex-shrink-0" style={{ color }}>#{s.rank}</span>
               <span className="text-[9px] font-semibold text-white truncate flex-1">{s.name}</span>
-              <span className="text-[9px] font-black flex-shrink-0" style={{ color }}>{s.count}</span>
+              <span className="text-[9px] font-black flex-shrink-0" style={{ color }}>{formatAmount(s.amount)}</span>
             </div>
           )
         })}

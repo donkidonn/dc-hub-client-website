@@ -59,24 +59,24 @@ function EmptyState({ message, accent = '#7c3aed' }) {
   )
 }
 
-const TIER_LABEL = { og: 'OG', best: 'Best', legendary: 'Legendary', high: 'High' }
-const TIER_COLOR_MAP = { og: '#f472b6', best: '#22d3ee', legendary: '#7c3aed', high: '#a78bfa' }
+const TIER_LABEL    = { og: 'OG', beyondbest: 'BEST', big: 'LEGEND', high: 'HIGH' }
+const TIER_COLOR_MAP = { og: '#f472b6', beyondbest: '#22d3ee', big: '#7c3aed', high: '#a78bfa' }
 
-function StealRow({ steal }) {
-  const color = TIER_COLOR_MAP[steal.tier] || '#7c3aed'
-  const diff  = Math.floor((Date.now() - new Date(steal.timestamp)) / 1000)
+function BrainrotRow({ row }) {
+  const color = TIER_COLOR_MAP[row.tier] || '#7c3aed'
+  const diff  = Math.floor((Date.now() - new Date(row.created_at)) / 1000)
   const ago   = diff < 60 ? `${diff}s ago` : diff < 3600 ? `${Math.floor(diff/60)}m ago` : `${Math.floor(diff/3600)}h ago`
 
   return (
     <div className="flex items-center justify-between px-3 py-2 rounded-xl"
       style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}20`, borderLeft: `2px solid ${color}` }}>
       <div>
-        <p className="text-xs font-semibold text-white">{steal.item_name}</p>
-        <p className="text-[10px]" style={{ color: 'rgba(156,163,175,0.45)' }}>{ago}</p>
+        <p className="text-xs font-semibold text-white">{row.name}</p>
+        <p className="text-[10px]" style={{ color: 'rgba(156,163,175,0.45)' }}>{ago}{row.raw_value ? ` · ${row.raw_value}` : ''}</p>
       </div>
       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
         style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
-        {TIER_LABEL[steal.tier] ?? steal.tier}
+        {TIER_LABEL[row.tier] ?? row.tier}
       </span>
     </div>
   )
@@ -84,27 +84,36 @@ function StealRow({ steal }) {
 
 export default function Statistics() {
   const { data: stats } = useQuery({
-    queryKey: ['steals', 'my-stats'],
-    queryFn:  () => api.get('/api/steals/my-stats'),
-  })
-
-  const { data: chartData = [] } = useQuery({
-    queryKey: ['steals', 'chart'],
-    queryFn:  () => api.get('/api/steals/chart'),
+    queryKey: ['brainrots', 'stats'],
+    queryFn:  () => api.get('/api/steals/brainrots-stats'),
     refetchInterval: 60_000,
   })
 
-  const { data: history = [] } = useQuery({
-    queryKey: ['steals', 'my-history'],
-    queryFn:  () => api.get('/api/steals/my-history'),
+  const { data: chartData = [] } = useQuery({
+    queryKey: ['brainrots', 'chart'],
+    queryFn:  () => api.get('/api/steals/brainrots-chart'),
+    refetchInterval: 60_000,
+  })
+
+  const { data: ogHistory = [] } = useQuery({
+    queryKey: ['brainrots', 'recent', 'og'],
+    queryFn:  () => api.get('/api/steals/brainrots-recent?tier=og'),
     refetchInterval: 30_000,
   })
 
-  const counts = stats?.counts ?? {}
+  const { data: bestHistory = [] } = useQuery({
+    queryKey: ['brainrots', 'recent', 'best'],
+    queryFn:  () => api.get('/api/steals/brainrots-recent?tier=best'),
+    refetchInterval: 30_000,
+  })
 
-  const ogHistory        = history.filter(s => s.tier === 'og')
-  const bestHistory      = history.filter(s => s.tier === 'best')
-  const legendaryHistory = history.filter(s => s.tier === 'legendary')
+  const { data: legendaryHistory = [] } = useQuery({
+    queryKey: ['brainrots', 'recent', 'legendary'],
+    queryFn:  () => api.get('/api/steals/brainrots-recent?tier=legendary'),
+    refetchInterval: 30_000,
+  })
+
+  const counts = stats ?? {}
 
   return (
     <div className="flex-1 flex flex-col p-3 md:p-4 gap-3 md:gap-4 overflow-y-auto lg:overflow-hidden min-w-0">
@@ -171,19 +180,19 @@ export default function Statistics() {
         <Panel title="Recent OGs" accent="#f472b6">
           {ogHistory.length === 0
             ? <EmptyState message="No OGs yet" accent="#f472b6" />
-            : <div className="flex flex-col gap-2">{ogHistory.slice(0,10).map(s => <StealRow key={s.id} steal={s} />)}</div>
+            : <div className="flex flex-col gap-2">{ogHistory.map(r => <BrainrotRow key={r.id} row={r} />)}</div>
           }
         </Panel>
-        <Panel title="Recent Best Tier" accent="#22d3ee">
+        <Panel title="Recent Best" accent="#22d3ee">
           {bestHistory.length === 0
-            ? <EmptyState message="No Best Tier yet" accent="#22d3ee" />
-            : <div className="flex flex-col gap-2">{bestHistory.slice(0,10).map(s => <StealRow key={s.id} steal={s} />)}</div>
+            ? <EmptyState message="No Best yet" accent="#22d3ee" />
+            : <div className="flex flex-col gap-2">{bestHistory.map(r => <BrainrotRow key={r.id} row={r} />)}</div>
           }
         </Panel>
         <Panel title="Recent Legendary" accent="#7c3aed">
           {legendaryHistory.length === 0
             ? <EmptyState message="No Legendary yet" accent="#7c3aed" />
-            : <div className="flex flex-col gap-2">{legendaryHistory.slice(0,10).map(s => <StealRow key={s.id} steal={s} />)}</div>
+            : <div className="flex flex-col gap-2">{legendaryHistory.map(r => <BrainrotRow key={r.id} row={r} />)}</div>
           }
         </Panel>
       </div>

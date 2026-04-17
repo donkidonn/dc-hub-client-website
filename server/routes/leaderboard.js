@@ -32,14 +32,15 @@ router.get('/', async (req, res) => {
       data.map(async (user, i) => {
         const { data: items } = await supabase
           .from('steals')
-          .select('item_name, tier')
+          .select('item_name, tier, amount')
           .eq('user_id', user.id)
 
         const itemMap = {}
-        items?.forEach(({ item_name, tier }) => {
+        items?.forEach(({ item_name, tier, amount }) => {
           if (!item_name) return
-          if (!itemMap[item_name]) itemMap[item_name] = { name: item_name, count: 0, tier }
+          if (!itemMap[item_name]) itemMap[item_name] = { name: item_name, count: 0, tier, amount: 0 }
           itemMap[item_name].count++
+          if (Number(amount) > itemMap[item_name].amount) itemMap[item_name].amount = Number(amount)
         })
 
         const topSteals = Object.values(itemMap)

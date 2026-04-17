@@ -8,6 +8,21 @@ const TIER_COLORS = {
   high:      '#34d399',
 }
 
+function formatAmount(n) {
+  if (!n) return null
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(n % 1_000_000_000 === 0 ? 0 : 1)}B/s`
+  if (n >= 1_000_000)     return `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M/s`
+  if (n >= 1_000)         return `$${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K/s`
+  return `$${n}/s`
+}
+
+const TIER_LABELS = {
+  og:        'OG',
+  best:      '1B+',
+  legendary: 'LEGEND',
+  high:      'HIGH',
+}
+
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - new Date(ts)) / 1000)
   if (diff < 60)  return `${diff}s ago`
@@ -60,16 +75,66 @@ export default function LiveSteals() {
         <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
           {steals.map((steal) => {
             const tierColor = TIER_COLORS[steal.tier] || '#7c3aed'
+            const tierLabel = TIER_LABELS[steal.tier] || steal.tier?.toUpperCase()
             return (
-              <div key={steal.id} className="steal-hover rounded-xl px-3 py-2 flex-shrink-0"
+              <div key={steal.id} className="steal-hover rounded-xl p-2 flex-shrink-0"
                 style={{ background: 'rgba(13,18,38,0.70)', border: `1px solid ${tierColor}30`, borderLeft: `3px solid ${tierColor}` }}>
-                <p className="text-[11px] font-semibold text-white truncate">{steal.item_name}</p>
-                <p className="text-[10px] truncate mt-0.5" style={{ color: 'rgba(196,181,253,0.5)' }}>
-                  {steal.users?.username ?? 'Unknown'}
-                </p>
-                <p className="text-[9px] mt-0.5" style={{ color: 'rgba(156,163,175,0.35)' }}>
-                  {timeAgo(steal.timestamp)}
-                </p>
+
+                {/* Image + tier badge row */}
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  {steal.image_url ? (
+                    <img
+                      src={steal.image_url}
+                      alt={steal.item_name}
+                      className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                      style={{ border: `1px solid ${tierColor}40` }}
+                      onError={e => { e.target.style.display = 'none' }}
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
+                      style={{ background: `${tierColor}15`, border: `1px solid ${tierColor}30` }}>
+                      <span className="text-[9px]" style={{ color: tierColor }}>?</span>
+                    </div>
+                  )}
+                  <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                    style={{ background: `${tierColor}20`, color: tierColor, border: `1px solid ${tierColor}40` }}>
+                    {tierLabel}
+                  </span>
+                </div>
+
+                {/* Name */}
+                <p className="text-[11px] font-semibold text-white truncate leading-tight">{steal.item_name}</p>
+
+                {/* Rarity */}
+                {steal.rarity && (
+                  <p className="text-[9px] truncate mt-0.5 font-medium" style={{ color: tierColor + 'cc' }}>
+                    {steal.rarity}
+                  </p>
+                )}
+
+                {/* Value */}
+                {steal.amount > 0 && (
+                  <p className="text-[9px] font-bold truncate mt-0.5" style={{ color: tierColor }}>
+                    {formatAmount(steal.amount)}
+                  </p>
+                )}
+
+                {/* Mutation */}
+                {steal.mutation && (
+                  <p className="text-[9px] truncate mt-0.5" style={{ color: 'rgba(196,181,253,0.6)' }}>
+                    {steal.mutation}
+                  </p>
+                )}
+
+                {/* Username + time */}
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-[9px] truncate" style={{ color: 'rgba(196,181,253,0.45)' }}>
+                    {steal.users?.username ?? 'Unknown'}
+                  </p>
+                  <p className="text-[8px] flex-shrink-0 ml-1" style={{ color: 'rgba(156,163,175,0.3)' }}>
+                    {timeAgo(steal.timestamp)}
+                  </p>
+                </div>
               </div>
             )
           })}

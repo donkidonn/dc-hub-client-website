@@ -45,6 +45,14 @@ function BrainrotIcon() {
   )
 }
 
+function formatAmount(n) {
+  if (!n) return '?'
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(n % 1_000_000_000 === 0 ? 0 : 1)}B/s`
+  if (n >= 1_000_000)     return `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M/s`
+  if (n >= 1_000)         return `$${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K/s`
+  return `$${n}/s`
+}
+
 function BrainrotCard({ item }) {
   const cfg = TIER_CONFIG[item.tier?.toLowerCase()] ?? { label: item.tier?.toUpperCase() ?? '?', color: '#7c3aed' }
   return (
@@ -54,12 +62,18 @@ function BrainrotCard({ item }) {
         style={{ background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
         #{item.rank}
       </span>
-      <div className="w-11 h-11 rounded-lg flex items-center justify-center"
+      <div className="w-11 h-11 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
         style={{ background: 'rgba(26,31,58,0.8)', border: `1px solid ${cfg.color}30` }}>
-        <BrainrotIcon />
+        {item.image_url
+          ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover"
+              onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
+          : null}
+        <div className={`w-full h-full items-center justify-center ${item.image_url ? 'hidden' : 'flex'}`}>
+          <BrainrotIcon />
+        </div>
       </div>
       <p className="text-[10px] font-bold text-white text-center truncate w-full leading-tight px-1">{item.name}</p>
-      <p className="text-[15px] font-black leading-none" style={{ color: cfg.color }}>{item.count}</p>
+      <p className="text-[13px] font-black leading-none" style={{ color: cfg.color }}>{formatAmount(item.amount)}</p>
       <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>{cfg.label}</p>
     </div>
   )
@@ -443,13 +457,25 @@ function EmptyState({ message, accent = '#7c3aed' }) {
 function StealRow({ steal }) {
   const cfg = TIER_CONFIG[steal.tier?.toLowerCase()] ?? { label: steal.tier, color: '#7c3aed' }
   return (
-    <div className="flex items-center justify-between px-3 py-2 rounded-xl"
+    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
       style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${cfg.color}20`, borderLeft: `2px solid ${cfg.color}` }}>
-      <div>
-        <p className="text-xs font-semibold text-white">{steal.item_name}</p>
+      <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
+        style={{ background: 'rgba(26,31,58,0.8)', border: `1px solid ${cfg.color}25` }}>
+        {steal.image_url
+          ? <img src={steal.image_url} alt={steal.item_name} className="w-full h-full object-cover"
+              onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
+          : null}
+        <div className={`w-full h-full items-center justify-center ${steal.image_url ? 'hidden' : 'flex'}`}>
+          <svg width="14" height="14" fill="none" stroke={cfg.color} strokeWidth="1.5" strokeOpacity="0.5" viewBox="0 0 24 24">
+            <path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6l-.7.4V17a2 2 0 01-2 2h-2a2 2 0 01-2-2v-1.6l-.7-.4A7 7 0 015 9a7 7 0 017-7z"/>
+          </svg>
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-white truncate">{steal.item_name}</p>
         <p className="text-[10px]" style={{ color: 'rgba(156,163,175,0.45)' }}>{timeAgo(steal.timestamp)}</p>
       </div>
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
         style={{ background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }}>
         {cfg.label}
       </span>
