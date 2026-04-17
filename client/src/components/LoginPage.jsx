@@ -134,7 +134,7 @@ export default function LoginPage({ onLogin }) {
       <div className="relative flex w-full h-full" style={{ zIndex: 1 }}>
 
         {/* ── Left side — branding + features ── */}
-        <div className="hidden md:flex flex-col justify-center flex-1 px-12 lg:px-20 gap-10">
+        <div className="hidden md:flex flex-col justify-center flex-1 px-12 lg:px-16 gap-10 max-w-lg ml-auto">
 
           {/* Logo */}
           <div>
@@ -185,7 +185,7 @@ export default function LoginPage({ onLogin }) {
         </div>
 
         {/* ── Right side — login card ── */}
-        <div className="flex items-center justify-center w-full md:w-[420px] lg:w-[460px] flex-shrink-0 p-6">
+        <div className="flex items-center justify-center w-full md:w-[400px] lg:w-[440px] flex-shrink-0 p-6 mr-auto">
           <div className="w-full max-w-sm">
 
             {/* Card */}
