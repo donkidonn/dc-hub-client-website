@@ -1,3 +1,5 @@
+const BASE_URL = import.meta.env.VITE_API_URL || ''
+
 const getToken = () => localStorage.getItem('token')
 
 const headers = () => ({
@@ -8,7 +10,7 @@ const headers = () => ({
 async function request(url, options = {}) {
   let res
   try {
-    res = await fetch(url, { ...options, headers: headers() })
+    res = await fetch(`${BASE_URL}${url}`, { ...options, headers: headers() })
   } catch {
     throw new Error('Connection error. Please try again.')
   }

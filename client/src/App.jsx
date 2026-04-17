@@ -291,7 +291,7 @@ function AppInner() {
   const { user, loading } = useUser()
 
   function handleLogin() {
-    window.location.href = '/auth/discord'
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/discord`
   }
 
   // If no token at all, show login immediately (no flash)
