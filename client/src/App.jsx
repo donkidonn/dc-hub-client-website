@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import backgroundImg from './assets/background.png'
 import Sidebar from './components/Sidebar'
@@ -10,6 +10,7 @@ import Slots from './components/Slots'
 import Leaderboard from './components/Leaderboard'
 import ParticleCanvas from './components/ParticleCanvas'
 import { AnimationProvider, AnimationContext } from './context/AnimationContext'
+import { UserProvider, useUser } from './context/UserContext'
 
 // Map URL paths to page ids used by Sidebar
 const PATH_TO_PAGE = {
@@ -53,8 +54,12 @@ function AmbientOrbs() {
 // Compact header shown only on mobile in place of the sidebar
 function MobileHeader() {
   const { animationsEnabled, toggleAnimations } = useContext(AnimationContext)
-  // Mock user data — replace with Supabase later
-  const user = { name: 'Username', tag: 'user#0000', balance: '$0.00' }
+  const { user: authUser } = useUser()
+  const user = {
+    name:    authUser?.username ?? 'Username',
+    tag:     authUser?.discord_id ?? '000000000000',
+    balance: authUser ? `$${Number(authUser.balance).toFixed(2)}` : '$0.00',
+  }
 
   return (
     <div
@@ -84,7 +89,7 @@ function MobileHeader() {
         </div>
         <div className="leading-none">
           <p className="text-[11px] font-bold text-white">{user.name}</p>
-          <p className="text-[9px]" style={{ color: 'rgba(196,181,253,0.45)' }}>{user.tag}</p>
+          <p className="text-[9px]" style={{ color: 'rgba(196,181,253,0.45)' }}>ID: {user.tag}</p>
         </div>
       </div>
 
@@ -261,17 +266,47 @@ function Dashboard() {
   )
 }
 
-function AppInner() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+// Handles the /auth?token=... redirect from Discord OAuth
+function AuthCallback() {
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('token')
+    const error = params.get('error')
+
+    if (token) {
+      localStorage.setItem('token', token)
+      navigate('/home', { replace: true })
+    } else {
+      console.error('Auth failed:', error)
+      navigate('/', { replace: true })
+    }
+  }, [navigate])
+
+  return null
+}
+
+function AppInner() {
+  const { user, loading } = useUser()
+
   function handleLogin() {
-    setIsLoggedIn(true)
-    navigate('/home')
+    window.location.href = '/auth/discord'
   }
 
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />
+  // If no token at all, show login immediately (no flash)
+  const hasToken = !!localStorage.getItem('token')
+
+  // Still verifying token with server — show nothing (avoids login flash)
+  if (hasToken && loading) return null
+
+  // Token gone or auth failed → show login
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
+      </Routes>
+    )
   }
 
   return <Dashboard />
@@ -280,7 +315,12 @@ function AppInner() {
 function App() {
   return (
     <AnimationProvider>
-      <AppInner />
+      <UserProvider>
+        <Routes>
+          <Route path="/auth" element={<AuthCallback />} />
+          <Route path="/*" element={<AppInner />} />
+        </Routes>
+      </UserProvider>
     </AnimationProvider>
   )
 }

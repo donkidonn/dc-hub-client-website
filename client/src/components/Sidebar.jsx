@@ -1,5 +1,9 @@
-import { useContext } from 'react'
+import { useContext, useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { AnimationContext } from '../context/AnimationContext'
+import { useUser } from '../context/UserContext'
+import api from '../api'
+import DepositModal from './DepositModal'
 
 // Nav icons
 const NAV_ICONS = {
@@ -42,24 +46,55 @@ const STATS = [
   { key: 'totalSteals',   label: 'Total Steals',   color: '#f472b6' },
 ]
 
+
+function useCountdown(expiryDate) {
+  const [remaining, setRemaining] = useState('')
+  useEffect(() => {
+    if (!expiryDate) { setRemaining(''); return }
+    const tick = () => {
+      const diff = new Date(expiryDate) - Date.now()
+      if (diff <= 0) { setRemaining('Expired'); return }
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      if (h > 0) setRemaining(`${h}h ${String(m).padStart(2, '0')}m`)
+      else setRemaining(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [expiryDate])
+  return remaining
+}
+
+
 function Divider({ mx = 16 }) {
   return <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: `0 ${mx}px` }} />
 }
 
-function Avatar() {
+function Avatar({ avatarUrl }) {
   return (
     <div className="relative flex-shrink-0">
-      <div
-        className="w-11 h-11 rounded-full flex items-center justify-center"
-        style={{
-          background: 'linear-gradient(135deg, rgba(109,40,217,0.35), rgba(34,211,238,0.12))',
-          border: '2px solid rgba(139,92,246,0.45)',
-        }}
-      >
-        <svg width="20" height="20" fill="rgba(196,181,253,0.65)" viewBox="0 0 24 24">
-          <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.315 0-10 1.655-10 5v1a1 1 0 001 1h18a1 1 0 001-1v-1c0-3.345-6.685-5-10-5z"/>
-        </svg>
-      </div>
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt="avatar"
+          className="w-11 h-11 rounded-full object-cover"
+          style={{ border: '2px solid rgba(139,92,246,0.45)' }}
+        />
+      ) : (
+        <div
+          className="w-11 h-11 rounded-full flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, rgba(109,40,217,0.35), rgba(34,211,238,0.12))',
+            border: '2px solid rgba(139,92,246,0.45)',
+          }}
+        >
+          <svg width="20" height="20" fill="rgba(196,181,253,0.65)" viewBox="0 0 24 24">
+            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.315 0-10 1.655-10 5v1a1 1 0 001 1h18a1 1 0 001-1v-1c0-3.345-6.685-5-10-5z"/>
+          </svg>
+        </div>
+      )}
       {/* Online dot */}
       <span
         className="absolute bottom-0 right-0 w-3 h-3 rounded-full"
@@ -71,14 +106,43 @@ function Avatar() {
 
 export default function Sidebar({ activePage, onNavigate }) {
   const { animationsEnabled, toggleAnimations } = useContext(AnimationContext)
+  const { user: authUser } = useUser()
+  const [showDeposit, setShowDeposit] = useState(false)
+
+  const { data: mySlot } = useQuery({
+    queryKey: ['slots', 'my-slot'],
+    queryFn:  () => api.get('/api/slots/my-slot'),
+    refetchInterval: 30_000,
+    enabled: !!authUser,
+  })
+
+  const { data: sidebarStats } = useQuery({
+    queryKey: ['steals', 'my-stats'],
+    queryFn:  () => api.get('/api/steals/my-stats'),
+    refetchInterval: 60_000,
+    enabled: !!authUser,
+  })
+
+  const { data: deposits = [] } = useQuery({
+    queryKey: ['steals', 'deposits'],
+    queryFn:  () => api.get('/api/steals/deposits'),
+    refetchInterval: 60_000,
+    enabled: !!authUser,
+  })
+
+  const slotCountdown  = useCountdown(mySlot?.expires_at)
+  const totalDepositAmt = deposits
+    .filter(d => d.status === 'finished' || d.status === 'confirmed')
+    .reduce((sum, d) => sum + Number(d.amount), 0)
 
   const user = {
-    name:          'Username',
-    tag:           'user#0000',
-    balance:       '$ 0.00',
-    timeRemaining: '—',
-    totalDeposit:  '$ 0.00',
-    totalSteals:   '0',
+    name:          authUser?.username ?? 'Username',
+    tag:           authUser?.discord_id ?? '000000000000',
+    avatarUrl:     authUser?.avatar_url ?? null,
+    balance:       authUser ? `$ ${Number(authUser.balance).toFixed(2)}` : '$ 0.00',
+    timeRemaining: slotCountdown || '—',
+    totalDeposit:  `$ ${totalDepositAmt.toFixed(2)}`,
+    totalSteals:   String(sidebarStats?.totalSteals ?? 0),
   }
 
   return (
@@ -151,29 +215,49 @@ export default function Sidebar({ activePage, onNavigate }) {
 
       {/* User info */}
       <div className="px-4 py-4 flex items-center gap-3">
-        <Avatar />
+        <Avatar avatarUrl={user.avatarUrl} />
         <div className="min-w-0">
           <p className="text-sm font-bold text-white truncate leading-tight">{user.name}</p>
           <p className="text-[11px] leading-snug truncate" style={{ color: 'rgba(196,181,253,0.45)' }}>
-            {user.tag}
+            ID: {user.tag}
           </p>
         </div>
       </div>
 
       {/* Balance */}
       <div
-        className="balance-hover mx-3 mb-3 px-4 py-3 rounded-2xl"
+        className="balance-hover mx-3 mb-3 px-4 py-3 rounded-2xl flex items-center justify-between"
         style={{
           background: 'linear-gradient(135deg, rgba(76,29,149,0.65) 0%, rgba(109,40,217,0.35) 100%)',
           border: '1px solid rgba(139,92,246,0.3)',
           boxShadow: '0 4px 20px rgba(109,40,217,0.15)',
         }}
       >
-        <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-1" style={{ color: 'rgba(216,180,254,0.55)' }}>
-          Balance
-        </p>
-        <p className="text-2xl font-black text-white leading-none">{user.balance}</p>
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-1" style={{ color: 'rgba(216,180,254,0.55)' }}>
+            Balance
+          </p>
+          <p className="text-2xl font-black text-white leading-none">{user.balance}</p>
+        </div>
+        <button
+          onClick={() => setShowDeposit(true)}
+          title="Add balance"
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+          style={{
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: '#fff',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
       </div>
+
+      {showDeposit && <DepositModal onClose={() => setShowDeposit(false)} />}
 
       {/* Stats */}
       <div className="mx-3 flex flex-col gap-1">
