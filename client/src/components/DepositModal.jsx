@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
+const BASE_URL = import.meta.env.VITE_API_URL || ''
+
 const CURRENCIES = [
   { id: 'usdtbsc',      label: 'USDT',  network: 'BEP-20',   color: '#26a17b' },
   { id: 'usdttrc20',    label: 'USDT',  network: 'TRC-20',   color: '#26a17b' },
@@ -61,7 +63,7 @@ function PendingTab({ pending, loadingPending, onConfirmed, onCancelled }) {
     if (!pending?.payment_id) return
     pollRef.current = setInterval(async () => {
       try {
-        const res  = await fetch(`/api/balance/deposit/${pending.payment_id}/status`, {
+        const res  = await fetch(`${BASE_URL}/api/balance/deposit/${pending.payment_id}/status`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         })
         const data = await res.json()
@@ -79,7 +81,7 @@ function PendingTab({ pending, loadingPending, onConfirmed, onCancelled }) {
     setCancelling(true)
     setCancelError(null)
     try {
-      const res = await fetch('/api/balance/deposit/cancel', {
+      const res = await fetch(`${BASE_URL}/api/balance/deposit/cancel`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
@@ -212,7 +214,7 @@ function CreateTab({ hasPending, onCreated }) {
     if (!num || num < 1) { setError('Minimum deposit is $1'); return }
     setLoading(true); setError(null)
     try {
-      const res = await fetch('/api/balance/deposit', {
+      const res = await fetch(`${BASE_URL}/api/balance/deposit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -341,7 +343,7 @@ export default function DepositModal({ onClose }) {
   useEffect(() => {
     async function fetchPending() {
       try {
-        const res  = await fetch('/api/balance/deposit/pending', {
+        const res  = await fetch(`${BASE_URL}/api/balance/deposit/pending`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         })
         const data = await res.json()
