@@ -10,7 +10,7 @@ export function UserProvider({ children }) {
     const token = localStorage.getItem('token')
     if (!token) { setLoading(false); return }
 
-    fetch('/auth/me', {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
