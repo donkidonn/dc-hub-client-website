@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useUser } from '../context/UserContext'
 
 const BASE_URL = import.meta.env.VITE_API_URL || ''
 
@@ -334,6 +335,7 @@ function CreateTab({ hasPending, onCreated }) {
 
 // ─── Modal shell ─────────────────────────────────────────────────────────────
 export default function DepositModal({ onClose }) {
+  const { refreshUser } = useUser()
   const [tab, setTab]               = useState('create')  // 'create' | 'pending'
   const [pending, setPending]       = useState(null)
   const [loadingPending, setLoadingPending] = useState(true)
@@ -411,7 +413,7 @@ export default function DepositModal({ onClose }) {
                 Your balance has been credited.
               </p>
             </div>
-            <button onClick={onClose}
+            <button onClick={() => { refreshUser(); onClose() }}
               className="w-full py-3 rounded-xl text-sm font-bold"
               style={{ background: 'linear-gradient(135deg,#34d399,#059669)', color: '#fff', cursor: 'pointer' }}>
               Done
