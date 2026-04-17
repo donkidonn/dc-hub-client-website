@@ -2,7 +2,7 @@ import axios from 'axios'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 
 // Routes Luarmor calls through QuotaGuard static IPs so Luarmor's IP whitelist passes
-const agent = () => new HttpsProxyAgent(process.env.QUOTAGUARD_URL)
+const agent = () => process.env.QUOTAGUARD_URL ? new HttpsProxyAgent(process.env.QUOTAGUARD_URL) : undefined
 
 const luarmorBase = () => `https://api.luarmor.net/v3/projects/${process.env.LUARMOR_PROJECT_ID}/users`
 const luarmorAuth = () => ({ Authorization: process.env.LUARMOR_API_KEY })
