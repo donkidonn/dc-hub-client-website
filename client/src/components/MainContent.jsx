@@ -56,7 +56,7 @@ function formatAmount(n) {
 function BrainrotCard({ item }) {
   const cfg = TIER_CONFIG[item.tier?.toLowerCase()] ?? { label: item.tier?.toUpperCase() ?? '?', color: '#7c3aed' }
   return (
-    <div className="card-hover flex-1 flex flex-col items-center rounded-xl p-2 gap-1"
+    <div className="card-hover flex-1 flex flex-col items-center rounded-xl p-3 gap-1.5"
       style={{ background: 'rgba(8,11,22,0.75)', border: `1px solid ${cfg.color}22`, minWidth: 0 }}>
       <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
         style={{ background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
@@ -81,7 +81,7 @@ function BrainrotCard({ item }) {
 
 function EmptyBrainrotCard({ rank }) {
   return (
-    <div className="flex-1 flex flex-col items-center rounded-xl p-2 gap-1"
+    <div className="flex-1 flex flex-col items-center rounded-xl p-3 gap-1.5"
       style={{ background: 'rgba(8,11,22,0.5)', border: '1px solid rgba(139,92,246,0.08)', minWidth: 0 }}>
       <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
         style={{ background: 'rgba(139,92,246,0.08)', color: 'rgba(156,163,175,0.3)' }}>
@@ -108,7 +108,7 @@ function TopStealsContent({ topItems = [] }) {
         </span>
         <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
       </div>
-      <div className="flex gap-2 flex-1 min-h-0">
+      <div className="flex gap-2">
         {[1, 2, 3].map((rank) => {
           const item = topItems.find(i => i.rank === rank)
           return item ? <BrainrotCard key={rank} item={item} /> : <EmptyBrainrotCard key={rank} rank={rank} />
