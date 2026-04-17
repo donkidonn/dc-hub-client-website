@@ -14,8 +14,13 @@ const app = express()
 const PORT = process.env.PORT || 3000
 
 // CORS — only allow requests from the frontend
+const allowedOrigin = (process.env.CLIENT_URL || '').replace(/\/$/, '')
 app.use(cors({
-  origin: process.env.CLIENT_URL,
+  origin: (origin, callback) => {
+    // Allow server-to-server (no origin) or exact CLIENT_URL match
+    if (!origin || origin === allowedOrigin) return callback(null, true)
+    callback(new Error(`CORS blocked: ${origin}`))
+  },
   credentials: true,
 }))
 
