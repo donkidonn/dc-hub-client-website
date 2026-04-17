@@ -551,7 +551,7 @@ export default function MainContent() {
     refetchInterval: 60_000,
   })
 
-  const loaderLine = `loadstring(game:HttpGet("https://api.luarmor.net/v3/projects/${LUARMOR_PROJECT_ID}/loader"))()`
+  const loaderLine = `loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/842f0e9afd983eb92301a794b3cf1327.lua"))()`
   const keyLine    = authUser?.luarmor_key ? `script_key="${authUser.luarmor_key}";` : null
   const fullScript = keyLine ? `${keyLine}\n${loaderLine}` : loaderLine
 

