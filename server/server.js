@@ -4,6 +4,7 @@ import cors from 'cors'
 import axios from 'axios'
 import rateLimit from 'express-rate-limit'
 import authRoutes from './routes/auth.js'
+import { luarmorPatch } from './luarmor.js'
 import balanceRoutes from './routes/balance.js'
 import slotsRoutes from './routes/slots.js'
 import stealsRoutes from './routes/steals.js'
@@ -49,6 +50,16 @@ app.use('/api/leaderboard', leaderboardRoutes)
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }))
 
+// Temporary: reveals outbound IP so it can be whitelisted on Luarmor
+app.get('/my-ip', async (req, res) => {
+  try {
+    const { data } = await axios.get('https://api.ipify.org?format=json')
+    res.json(data)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // Slot expiry cleanup — runs every minute
 // Deactivates Luarmor keys and frees slots when they expire
 setInterval(async () => {
@@ -65,11 +76,7 @@ setInterval(async () => {
     // Deactivate Luarmor key
     if (slot.users?.luarmor_key) {
       try {
-        await axios.patch(
-          `https://api.luarmor.net/v3/projects/${process.env.LUARMOR_PROJECT_ID}/users`,
-          { user_key: slot.users.luarmor_key, auth_expire: 0 },
-          { headers: { Authorization: process.env.LUARMOR_API_KEY } }
-        )
+        await luarmorPatch({ user_key: slot.users.luarmor_key, auth_expire: 0 })
       } catch (err) {
         console.error(`Failed to deactivate key for slot ${slot.id}:`, err.message)
       }

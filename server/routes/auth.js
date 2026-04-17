@@ -3,16 +3,13 @@ import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import supabase from '../db.js'
 import { requireAuth } from '../middleware/auth.js'
+import { luarmorPost } from '../luarmor.js'
 
 const router = Router()
 
 // Creates an inactive Luarmor key (auth_expire = 0) for a new user
 async function createInactiveLuarmorKey(discord_id) {
-  const { data } = await axios.post(
-    `https://api.luarmor.net/v3/projects/${process.env.LUARMOR_PROJECT_ID}/users`,
-    { discord_id, auth_expire: 0 },
-    { headers: { Authorization: process.env.LUARMOR_API_KEY } }
-  )
+  const data = await luarmorPost({ discord_id, auth_expire: 0 })
   return data.user_key
 }
 

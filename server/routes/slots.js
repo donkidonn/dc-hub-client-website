@@ -2,28 +2,22 @@ import { Router } from 'express'
 import axios from 'axios'
 import { requireAuth } from '../middleware/auth.js'
 import supabase from '../db.js'
+import { luarmorPost, luarmorPatch, luarmorGet } from '../luarmor.js'
 
 const router = Router()
 const PRICE_PER_HOUR = 1
-
-const luarmorUrl     = () => `https://api.luarmor.net/v3/projects/${process.env.LUARMOR_PROJECT_ID}/users`
-const luarmorHeaders = () => ({ Authorization: process.env.LUARMOR_API_KEY })
 
 // Create a new inactive Luarmor key for a user (auth_expire = 0).
 // If the discord_id already exists in Luarmor, fetch and return their existing key.
 async function createLuarmorKey(discord_id) {
   try {
-    const { data } = await axios.post(
-      luarmorUrl(),
-      { discord_id, auth_expire: 0 },
-      { headers: luarmorHeaders() }
-    )
+    const data = await luarmorPost({ discord_id, auth_expire: 0 })
     return data.user_key
   } catch (createErr) {
     console.error('Luarmor create failed:', createErr.response?.data || createErr.message)
     // User may already exist in Luarmor — try fetching their key
     try {
-      const { data: list } = await axios.get(luarmorUrl(), { headers: luarmorHeaders() })
+      const list = await luarmorGet()
       const existing = list?.find?.(u => String(u.discord_id) === String(discord_id))
       if (existing?.user_key) return existing.user_key
     } catch (fetchErr) {
@@ -35,20 +29,12 @@ async function createLuarmorKey(discord_id) {
 
 // Activate (or extend) user's Luarmor key
 async function activateLuarmorKey(user_key, auth_expire) {
-  await axios.patch(
-    luarmorUrl(),
-    { user_key, auth_expire },
-    { headers: luarmorHeaders() }
-  )
+  await luarmorPatch({ user_key, auth_expire })
 }
 
 // Deactivate user's Luarmor key (set auth_expire to 0)
 async function deactivateLuarmorKey(user_key) {
-  await axios.patch(
-    luarmorUrl(),
-    { user_key, auth_expire: 0 },
-    { headers: luarmorHeaders() }
-  )
+  await luarmorPatch({ user_key, auth_expire: 0 })
 }
 
 // GET /api/slots — public, returns all slots with occupant info
@@ -246,11 +232,7 @@ router.post('/reset-hwid', requireAuth, async (req, res) => {
   if (!user?.luarmor_key) return res.status(400).json({ error: 'No script key found on your account' })
 
   try {
-    await axios.patch(
-      `https://api.luarmor.net/v3/projects/${process.env.LUARMOR_PROJECT_ID}/users`,
-      { user_key: user.luarmor_key, hwid: '' },
-      { headers: { Authorization: process.env.LUARMOR_API_KEY } }
-    )
+    await luarmorPatch({ user_key: user.luarmor_key, hwid: '' })
     res.json({ ok: true })
   } catch (err) {
     console.error('HWID reset error:', err.response?.data || err.message)
