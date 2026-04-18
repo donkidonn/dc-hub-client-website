@@ -11,6 +11,7 @@ import Leaderboard from './components/Leaderboard'
 import ParticleCanvas from './components/ParticleCanvas'
 import { AnimationProvider, AnimationContext } from './context/AnimationContext'
 import { UserProvider, useUser } from './context/UserContext'
+import api from './api'
 
 // Map URL paths to page ids used by Sidebar
 const PATH_TO_PAGE = {
@@ -266,22 +267,30 @@ function Dashboard() {
   )
 }
 
-// Handles the /auth?token=... redirect from Discord OAuth
+// Handles the /auth?code=... redirect from Discord OAuth
 function AuthCallback() {
   const navigate = useNavigate()
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const token = params.get('token')
+    const code = params.get('code')
     const error = params.get('error')
 
-    if (token) {
-      localStorage.setItem('token', token)
-      navigate('/home', { replace: true })
-    } else {
+    if (!code) {
       console.error('Auth failed:', error)
       navigate('/', { replace: true })
+      return
     }
+
+    api.post('/auth/discord/exchange', { code })
+      .then(({ token }) => {
+        localStorage.setItem('token', token)
+        navigate('/home', { replace: true })
+      })
+      .catch(err => {
+        console.error('Auth exchange failed:', err.message)
+        navigate('/', { replace: true })
+      })
   }, [navigate])
 
   return null

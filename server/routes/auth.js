@@ -6,7 +6,50 @@ import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
-// GET /auth/discord — redirect user to Discord OAuth
+// Shared helper — exchange Discord code + upsert user + return JWT
+async function exchangeCodeForToken(code, redirectUri) {
+  const tokenRes = await axios.post(
+    'https://discord.com/api/oauth2/token',
+    new URLSearchParams({
+      client_id: process.env.DISCORD_CLIENT_ID,
+      client_secret: process.env.DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri,
+    }),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  )
+
+  const { access_token } = tokenRes.data
+
+  const userRes = await axios.get('https://discord.com/api/users/@me', {
+    headers: { Authorization: `Bearer ${access_token}` },
+  })
+
+  const { id: discord_id, username, avatar } = userRes.data
+  const avatar_url = avatar
+    ? `https://cdn.discordapp.com/avatars/${discord_id}/${avatar}.png`
+    : null
+
+  const { data: user, error } = await supabase
+    .from('users')
+    .upsert(
+      { discord_id, username, avatar_url },
+      { onConflict: 'discord_id' }
+    )
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return jwt.sign(
+    { id: user.id, discord_id: user.discord_id },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  )
+}
+
+// GET /auth/discord — redirect user to Discord OAuth (redirect_uri points to frontend)
 router.get('/discord', (req, res) => {
   const params = new URLSearchParams({
     client_id: process.env.DISCORD_CLIENT_ID,
@@ -17,64 +60,21 @@ router.get('/discord', (req, res) => {
   res.redirect(`https://discord.com/api/oauth2/authorize?${params}`)
 })
 
-// GET /auth/discord/callback — exchange code, upsert user, return JWT
-router.get('/discord/callback', async (req, res) => {
-  const { code } = req.query
-  if (!code) return res.redirect(`${process.env.CLIENT_URL}/auth?error=no_code`)
+// POST /auth/discord/exchange — frontend sends the code, we return a JWT
+router.post('/discord/exchange', async (req, res) => {
+  const { code } = req.body
+  if (!code) return res.status(400).json({ error: 'No code provided' })
 
   try {
-    // Exchange code for Discord access token
-    const tokenRes = await axios.post(
-      'https://discord.com/api/oauth2/token',
-      new URLSearchParams({
-        client_id: process.env.DISCORD_CLIENT_ID,
-        client_secret: process.env.DISCORD_CLIENT_SECRET,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: process.env.DISCORD_REDIRECT_URI,
-      }),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-    )
-
-    const { access_token } = tokenRes.data
-
-    // Fetch Discord user profile
-    const userRes = await axios.get('https://discord.com/api/users/@me', {
-      headers: { Authorization: `Bearer ${access_token}` },
-    })
-
-    const { id: discord_id, username, avatar } = userRes.data
-    const avatar_url = avatar
-      ? `https://cdn.discordapp.com/avatars/${discord_id}/${avatar}.png`
-      : null
-
-    // Upsert user in Supabase
-    const { data: user, error } = await supabase
-      .from('users')
-      .upsert(
-        { discord_id, username, avatar_url },
-        { onConflict: 'discord_id' }
-      )
-      .select()
-      .single()
-
-    if (error) throw error
-
-    // Sign JWT (expires in 7 days)
-    const token = jwt.sign(
-      { id: user.id, discord_id: user.discord_id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    )
-
-    res.redirect(`${process.env.CLIENT_URL}/auth?token=${token}`)
+    const token = await exchangeCodeForToken(code, process.env.DISCORD_REDIRECT_URI)
+    res.json({ token })
   } catch (err) {
-    console.error('Discord callback error:', err.message)
-    res.redirect(`${process.env.CLIENT_URL}/auth?error=auth_failed`)
+    console.error('Discord exchange error:', err.message)
+    res.status(401).json({ error: 'Authentication failed' })
   }
 })
 
-// GET /auth/me — return current logged-in user (includes luarmor_key)
+// GET /auth/me — return current logged-in user
 router.get('/me', requireAuth, async (req, res) => {
   const { data: user, error } = await supabase
     .from('users')
