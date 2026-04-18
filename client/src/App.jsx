@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import backgroundImg from './assets/background.png'
 import Sidebar from './components/Sidebar'
@@ -80,12 +80,17 @@ function MobileHeader() {
       {/* User info */}
       <div className="flex items-center gap-2">
         <div className="relative flex-shrink-0">
-          <div className="w-7 h-7 rounded-full flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.35),rgba(34,211,238,0.12))', border: '1.5px solid rgba(139,92,246,0.45)' }}>
-            <svg width="13" height="13" fill="rgba(196,181,253,0.65)" viewBox="0 0 24 24">
-              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.315 0-10 1.655-10 5v1a1 1 0 001 1h18a1 1 0 001-1v-1c0-3.345-6.685-5-10-5z"/>
-            </svg>
-          </div>
+          {authUser?.avatar_url ? (
+            <img src={authUser.avatar_url} alt="avatar" className="w-7 h-7 rounded-full object-cover"
+              style={{ border: '1.5px solid rgba(139,92,246,0.45)' }} />
+          ) : (
+            <div className="w-7 h-7 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.35),rgba(34,211,238,0.12))', border: '1.5px solid rgba(139,92,246,0.45)' }}>
+              <svg width="13" height="13" fill="rgba(196,181,253,0.65)" viewBox="0 0 24 24">
+                <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.315 0-10 1.655-10 5v1a1 1 0 001 1h18a1 1 0 001-1v-1c0-3.345-6.685-5-10-5z"/>
+              </svg>
+            </div>
+          )}
           <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full" style={{ background: '#34d399', border: '1.5px solid rgba(6,9,20,0.9)' }} />
         </div>
         <div className="leading-none">
@@ -119,6 +124,63 @@ function MobileHeader() {
           </svg>
         </button>
       </div>
+    </div>
+  )
+}
+
+// Redeem bar shown only on mobile (sidebar handles it on desktop)
+function MobileRedeemBar() {
+  const { refreshUser } = useUser()
+  const [code, setCode]   = useState('')
+  const [state, setState] = useState(null) // null | 'loading' | { ok, msg }
+
+  async function handleRedeem() {
+    if (!code.trim()) return
+    setState('loading')
+    try {
+      const data = await api.post('/api/balance/redeem', { code: code.trim() })
+      setState({ ok: true, msg: `+$${Number(data.amount).toFixed(2)} added!` })
+      setCode('')
+      refreshUser()
+    } catch (err) {
+      setState({ ok: false, msg: err.message })
+    }
+  }
+
+  return (
+    <div className="md:hidden px-3 pt-2 pb-1 flex-shrink-0"
+      style={{ background: 'rgba(5,8,18,0.92)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="flex gap-1.5">
+        <input
+          type="text"
+          placeholder="Redeem code..."
+          value={code}
+          onChange={e => { setCode(e.target.value.toUpperCase()); setState(null) }}
+          onKeyDown={e => e.key === 'Enter' && handleRedeem()}
+          maxLength={32}
+          className="flex-1 min-w-0 px-3 py-1.5 rounded-xl text-[11px] font-semibold text-white placeholder:text-gray-600 outline-none"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(139,92,246,0.2)' }}
+        />
+        <button
+          onClick={handleRedeem}
+          disabled={state === 'loading' || !code.trim()}
+          className="px-3 py-1.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all"
+          style={{
+            background: 'linear-gradient(135deg,rgba(109,40,217,0.6),rgba(124,58,237,0.4))',
+            border: '1px solid rgba(139,92,246,0.35)',
+            color: code.trim() ? '#c4b5fd' : 'rgba(196,181,253,0.3)',
+            cursor: code.trim() ? 'pointer' : 'default',
+          }}
+        >
+          {state === 'loading' ? '...' : 'Apply'}
+        </button>
+      </div>
+      {state && state !== 'loading' && (
+        <p className="text-[10px] font-semibold mt-1 px-1"
+          style={{ color: state.ok ? '#34d399' : '#f87171' }}>
+          {state.msg}
+        </p>
+      )}
     </div>
   )
 }
@@ -245,6 +307,7 @@ function Dashboard() {
         {/* Page content */}
         <div className="flex-1 flex flex-col min-w-0 pb-14 md:pb-0 overflow-hidden">
           <MobileHeader />
+          <MobileRedeemBar />
           <Routes>
             <Route path="/home"         element={<MainContent />} />
             <Route path="/statistics"   element={<Statistics />} />
