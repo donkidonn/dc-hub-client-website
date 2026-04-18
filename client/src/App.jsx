@@ -288,9 +288,9 @@ function AuthCallback() {
     api.post('/auth/discord/exchange', { code })
       .then(({ token }) => {
         localStorage.setItem('token', token)
-        refreshUser()
-        navigate('/home', { replace: true })
+        return refreshUser()
       })
+      .then(() => navigate('/home', { replace: true }))
       .catch(err => {
         console.error('Auth exchange failed:', err.message)
         navigate('/', { replace: true })

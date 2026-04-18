@@ -200,6 +200,7 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
   const [hours, setHours]         = useState(1)
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState(null)
+  const [success, setSuccess]     = useState(null)
   const [showManual, setShowManual]   = useState(false)
   const [showDeposit, setShowDeposit] = useState(false)
 
@@ -219,10 +220,12 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
   async function handleAction() {
     setLoading(true)
     setError(null)
+    setSuccess(null)
     try {
       const endpoint = hasActiveSlot ? '/api/slots/extend' : '/api/slots/acquire'
       const body     = hasActiveSlot ? { hours } : { grand_id: grandId, hours }
       await api.post(endpoint, body)
+      setSuccess(hasActiveSlot ? `Extended by ${hours}hr${hours !== 1 ? 's' : ''}!` : `Slot locked in for ${hours}hr${hours !== 1 ? 's' : ''}!`)
       onSuccess()
     } catch (err) {
       setError(err.message || 'Request failed')
@@ -359,8 +362,15 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
           <p className="text-[9px] mb-1" style={{ color: 'rgba(156,163,175,0.35)' }}>${pricePerHour}/hr</p>
         </div>
 
-        {/* Error */}
+        {/* Error / Success */}
         {error && <p className="text-[11px] text-red-400 text-center">{error}</p>}
+        {success && (
+          <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-xl"
+            style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
+            <span style={{ color: '#34d399', fontSize: 11 }}>✓</span>
+            <p className="text-[11px] font-semibold" style={{ color: '#34d399' }}>{success}</p>
+          </div>
+        )}
 
         {/* CTA */}
         <button
