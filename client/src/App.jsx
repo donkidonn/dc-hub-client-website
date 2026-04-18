@@ -282,6 +282,9 @@ function AuthCallback() {
       return
     }
 
+    // Clear code from URL immediately so re-renders can't re-use it
+    window.history.replaceState({}, '', '/auth')
+
     api.post('/auth/discord/exchange', { code })
       .then(({ token }) => {
         localStorage.setItem('token', token)
@@ -291,7 +294,7 @@ function AuthCallback() {
         console.error('Auth exchange failed:', err.message)
         navigate('/', { replace: true })
       })
-  }, [navigate])
+  }, [])
 
   return null
 }
