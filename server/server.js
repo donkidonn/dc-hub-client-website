@@ -9,6 +9,7 @@ import balanceRoutes from './routes/balance.js'
 import slotsRoutes from './routes/slots.js'
 import stealsRoutes from './routes/steals.js'
 import leaderboardRoutes from './routes/leaderboard.js'
+import adminRoutes from './routes/admin.js'
 import supabase from './db.js'
 
 const app = express()
@@ -72,7 +73,7 @@ app.use(cors({
     // Allow server-to-server calls (no origin header)
     if (!origin) return callback(null, true)
     // Allow any grandnotifier.online subdomain/root + localhost for dev
-    if (origin.endsWith('grandnotifier.online') || origin.startsWith('http://localhost')) {
+    if (origin.endsWith('grandnotifier.online') || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       return callback(null, true)
     }
     callback(null, false)
@@ -98,6 +99,7 @@ app.use('/api/balance', balanceRoutes)
 app.use('/api/slots', slotsRoutes)
 app.use('/api/steals', stealsRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
+app.use('/admin', adminRoutes)
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }))
@@ -128,7 +130,7 @@ setInterval(async () => {
     // Deactivate Luarmor key
     if (slot.users?.luarmor_key) {
       try {
-        await luarmorPatch({ user_key: slot.users.luarmor_key, auth_expire: 0 })
+        await luarmorPatch({ user_key: slot.users.luarmor_key, auth_expire: 1 })
       } catch (err) {
         console.error(`Failed to deactivate key for slot ${slot.id}:`, err.message)
       }

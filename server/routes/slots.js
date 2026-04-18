@@ -7,19 +7,22 @@ import { luarmorPost, luarmorPatch, luarmorGet } from '../luarmor.js'
 const router = Router()
 const PRICE_PER_HOUR = 1
 
-// Create a new inactive Luarmor key for a user (auth_expire = 0).
-// If the discord_id already exists in Luarmor, fetch and return their existing key.
-async function createLuarmorKey(discord_id) {
+// Create a Luarmor key with the actual expiry set immediately.
+// If the discord_id already exists in Luarmor, fetch their existing key and activate it.
+async function createLuarmorKey(discord_id, auth_expire) {
   try {
-    const data = await luarmorPost({ discord_id, auth_expire: 0 })
+    const data = await luarmorPost({ discord_id, auth_expire })
     return data.user_key
   } catch (createErr) {
     console.error('Luarmor create failed:', createErr.response?.data || createErr.message)
-    // User may already exist in Luarmor — try fetching their key
+    // User may already exist in Luarmor — fetch their key and activate it
     try {
       const list = await luarmorGet()
       const existing = list?.find?.(u => String(u.discord_id) === String(discord_id))
-      if (existing?.user_key) return existing.user_key
+      if (existing?.user_key) {
+        await luarmorPatch({ user_key: existing.user_key, auth_expire })
+        return existing.user_key
+      }
     } catch (fetchErr) {
       console.error('Luarmor fetch fallback failed:', fetchErr.response?.data || fetchErr.message)
     }
@@ -27,14 +30,14 @@ async function createLuarmorKey(discord_id) {
   }
 }
 
-// Activate (or extend) user's Luarmor key
+// Extend user's Luarmor key expiry
 async function activateLuarmorKey(user_key, auth_expire) {
   await luarmorPatch({ user_key, auth_expire })
 }
 
-// Deactivate user's Luarmor key (set auth_expire to 0)
+// Deactivate user's Luarmor key — auth_expire: 1 = Jan 1970 = expired
 async function deactivateLuarmorKey(user_key) {
-  await luarmorPatch({ user_key, auth_expire: 0 })
+  await luarmorPatch({ user_key, auth_expire: 1 })
 }
 
 // GET /api/slots — public, returns all slots with occupant info
@@ -99,18 +102,7 @@ router.post('/acquire', requireAuth, async (req, res) => {
 
   if (userErr) return res.status(500).json({ error: 'Failed to fetch user' })
 
-  // Auto-create a Luarmor key if the user doesn't have one yet
-  if (!user.luarmor_key) {
-    try {
-      const newKey = await createLuarmorKey(user.discord_id)
-      await supabase.from('users').update({ luarmor_key: newKey }).eq('id', req.user.id)
-      user.luarmor_key = newKey
-    } catch (err) {
-      console.error('Failed to create Luarmor key:', err.response?.data || err.message)
-      return res.status(500).json({ error: 'Failed to create your script key. Please try again.' })
-    }
-  }
-
+  // Balance check before anything else
   if (Number(user.balance) < cost) {
     return res.status(400).json({ error: `Insufficient balance. Need $${cost}, have $${user.balance}` })
   }
@@ -131,13 +123,25 @@ router.post('/acquire', requireAuth, async (req, res) => {
   const expires_at = new Date(Date.now() + Number(hours) * 60 * 60 * 1000)
   const auth_expire = Math.floor(expires_at.getTime() / 1000)
 
-  // Activate the user's existing Luarmor key
-  try {
-    await activateLuarmorKey(user.luarmor_key, auth_expire)
-  } catch (err) {
-    const errDetail = err.response?.data ?? err.message
-    console.error('Luarmor activate error (status', err.response?.status, '):', JSON.stringify(errDetail))
-    return res.status(500).json({ error: 'Failed to activate script key' })
+  // Auto-create a Luarmor key if the user doesn't have one yet (with expiry set immediately)
+  if (!user.luarmor_key) {
+    try {
+      const newKey = await createLuarmorKey(user.discord_id, auth_expire)
+      await supabase.from('users').update({ luarmor_key: newKey }).eq('id', req.user.id)
+      user.luarmor_key = newKey
+    } catch (err) {
+      console.error('Failed to create Luarmor key:', err.response?.data || err.message)
+      return res.status(500).json({ error: 'Failed to create your script key. Please try again.' })
+    }
+  } else {
+    // Activate existing key
+    try {
+      await activateLuarmorKey(user.luarmor_key, auth_expire)
+    } catch (err) {
+      const errDetail = err.response?.data ?? err.message
+      console.error('Luarmor activate error (status', err.response?.status, '):', JSON.stringify(errDetail))
+      return res.status(500).json({ error: 'Failed to activate script key' })
+    }
   }
 
   // Deduct balance and increment total_hours
