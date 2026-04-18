@@ -5,7 +5,7 @@ local SUPABASE_URL  = "https://ofclhcihedjtltiyjkvn.supabase.co"
 local SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mY2xoY2loZWRqdGx0aXlqa3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ2ODMsImV4cCI6MjA5MTM3MDY4M30.Sn4iT6lZghZnMGp4cBxDRfWs-ARoClk437qeEpqPAN0"
 local SAB_PLACE_ID  = 109983668079237
 local STEAL_WEBHOOK = "https://discord.com/api/webhooks/1491715535350534197/4TqBT7CAbrryR3qNlvkF11O440LuAS-rdOwGFw-pzZ3kiUMJU-UPBYyDoOFPOYaDb8eB"
-local SESSION_START = os.date("!%Y-%m-%dT%H:%M:%SZ") -- session start time
+local SESSION_START = os.date("!%Y-%m-%dT%H:%M:%SZ")
 
 -- Services
 local Players     = game:GetService("Players")
@@ -22,35 +22,31 @@ end
 local old = CoreGui:FindFirstChild("GrandNotifier")
 if old then old:Destroy() end
 
--- Colors (dark theme matching Grand Notifier website)
+-- Colors
 local BG        = Color3.fromRGB(10, 8, 20)
 local HDR_BG    = Color3.fromRGB(15, 12, 30)
 local CARD_BG   = Color3.fromRGB(18, 15, 35)
-local CARD_BG2  = Color3.fromRGB(22, 18, 42)
 local BORDER    = Color3.fromRGB(45, 35, 80)
 local BORDER2   = Color3.fromRGB(35, 28, 65)
-
 local TXT_WHITE  = Color3.fromRGB(240, 238, 255)
 local TXT_BRIGHT = Color3.fromRGB(200, 195, 235)
 local TXT_MID    = Color3.fromRGB(130, 120, 170)
 local TXT_DIM    = Color3.fromRGB(80, 72, 120)
-
 local PURPLE     = Color3.fromRGB(150, 80, 255)
 local CYAN       = Color3.fromRGB(0, 210, 200)
 local PURPLE_DIM = Color3.fromRGB(40, 20, 80)
-local CYAN_DIM   = Color3.fromRGB(0, 50, 50)
 
 -- Tier colors
 local TIER = {
-    low        = { label="15M",  txt=Color3.fromRGB(96,165,250),  badge=Color3.fromRGB(20,40,80),   acc=Color3.fromRGB(59,130,246)  },
-    high       = { label="50M",  txt=Color3.fromRGB(167,139,250), badge=Color3.fromRGB(35,20,70),   acc=Color3.fromRGB(124,58,237)  },
-    big        = { label="150M", txt=Color3.fromRGB(244,114,182), badge=Color3.fromRGB(60,15,45),   acc=Color3.fromRGB(219,39,119)  },
-    beyondbest = { label="1B",   txt=Color3.fromRGB(251,191,36),  badge=Color3.fromRGB(60,40,0),    acc=Color3.fromRGB(245,158,11)  },
-    og         = { label="OG",   txt=Color3.fromRGB(52,211,153),  badge=Color3.fromRGB(0,50,30),    acc=Color3.fromRGB(16,185,129)  },
+    low        = { label="15M",  txt=Color3.fromRGB(96,165,250),  badge=Color3.fromRGB(20,40,80),  acc=Color3.fromRGB(59,130,246)  },
+    high       = { label="50M",  txt=Color3.fromRGB(167,139,250), badge=Color3.fromRGB(35,20,70),  acc=Color3.fromRGB(124,58,237)  },
+    big        = { label="150M", txt=Color3.fromRGB(244,114,182), badge=Color3.fromRGB(60,15,45),  acc=Color3.fromRGB(219,39,119)  },
+    beyondbest = { label="1B",   txt=Color3.fromRGB(251,191,36),  badge=Color3.fromRGB(60,40,0),   acc=Color3.fromRGB(245,158,11)  },
+    og         = { label="OG",   txt=Color3.fromRGB(52,211,153),  badge=Color3.fromRGB(0,50,30),   acc=Color3.fromRGB(16,185,129)  },
 }
 
 local TAB_ON = {
-    All  = { bg=Color3.fromRGB(40,20,80),  txt=PURPLE },
+    All      = { bg=Color3.fromRGB(40,20,80),  txt=PURPLE },
     ["15M"]  = { bg=Color3.fromRGB(20,40,80),  txt=Color3.fromRGB(96,165,250)  },
     ["50M"]  = { bg=Color3.fromRGB(35,20,70),  txt=Color3.fromRGB(167,139,250) },
     ["150M"] = { bg=Color3.fromRGB(60,15,45),  txt=Color3.fromRGB(244,114,182) },
@@ -89,7 +85,6 @@ header.BorderSizePixel = 0
 header.Parent = main
 Instance.new("UICorner", header).CornerRadius = UDim.new(0, 14)
 
--- Square off header bottom corners
 local hFill = Instance.new("Frame")
 hFill.Size = UDim2.new(1, 0, 0, 14)
 hFill.Position = UDim2.new(0, 0, 1, -14)
@@ -104,7 +99,6 @@ hDiv.BackgroundColor3 = BORDER
 hDiv.BorderSizePixel = 0
 hDiv.Parent = header
 
--- Logo dot (purple)
 local logoDot = Instance.new("Frame")
 logoDot.Size = UDim2.new(0, 8, 0, 8)
 logoDot.Position = UDim2.new(0, 16, 0, 16)
@@ -113,7 +107,6 @@ logoDot.BorderSizePixel = 0
 logoDot.Parent = header
 Instance.new("UICorner", logoDot).CornerRadius = UDim.new(1, 0)
 
--- Title: GRAND
 local grandLbl = Instance.new("TextLabel")
 grandLbl.Size = UDim2.new(0, 120, 0, 18)
 grandLbl.Position = UDim2.new(0, 30, 0, 8)
@@ -125,7 +118,6 @@ grandLbl.Font = Enum.Font.GothamBold
 grandLbl.TextXAlignment = Enum.TextXAlignment.Left
 grandLbl.Parent = header
 
--- Subtitle: NOTIFIER (cyan/teal)
 local notifierLbl = Instance.new("TextLabel")
 notifierLbl.Size = UDim2.new(0, 120, 0, 18)
 notifierLbl.Position = UDim2.new(0, 30, 0, 28)
@@ -137,7 +129,6 @@ notifierLbl.Font = Enum.Font.GothamBold
 notifierLbl.TextXAlignment = Enum.TextXAlignment.Left
 notifierLbl.Parent = header
 
--- Live indicator dot
 local liveDot = Instance.new("Frame")
 liveDot.Size = UDim2.new(0, 7, 0, 7)
 liveDot.Position = UDim2.new(1, -110, 0.5, -3)
@@ -157,7 +148,6 @@ liveLbl.Font = Enum.Font.GothamBold
 liveLbl.TextXAlignment = Enum.TextXAlignment.Left
 liveLbl.Parent = header
 
--- Minimize button
 local minimizeBtn = Instance.new("TextButton")
 minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
 minimizeBtn.Position = UDim2.new(1, -38, 0.5, -14)
@@ -217,10 +207,10 @@ sl.SortOrder = Enum.SortOrder.LayoutOrder
 sl.Padding = UDim.new(0, 6)
 
 local SDEFS = {
-    { key="total",      lbl="TOTAL",  col=PURPLE                        },
-    { key="session",    lbl="SESSION",col=CYAN                          },
-    { key="low",        lbl="15M+",   col=Color3.fromRGB(96,165,250)   },
-    { key="high",       lbl="50M+",   col=Color3.fromRGB(167,139,250)  },
+    { key="total",   lbl="TOTAL",  col=PURPLE                       },
+    { key="session", lbl="SESSION",col=CYAN                         },
+    { key="low",     lbl="15M+",   col=Color3.fromRGB(96,165,250)  },
+    { key="high",    lbl="50M+",   col=Color3.fromRGB(167,139,250) },
 }
 local statNums = {}
 
@@ -273,9 +263,9 @@ tabLayout.FillDirection = Enum.FillDirection.Horizontal
 tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 tabLayout.Padding = UDim.new(0, 2)
 local tp = Instance.new("UIPadding", tabBar)
-tp.PaddingLeft  = UDim.new(0,3)
-tp.PaddingRight = UDim.new(0,3)
-tp.PaddingTop   = UDim.new(0,3)
+tp.PaddingLeft   = UDim.new(0,3)
+tp.PaddingRight  = UDim.new(0,3)
+tp.PaddingTop    = UDim.new(0,3)
 tp.PaddingBottom = UDim.new(0,3)
 
 local TABS = {"All","15M","50M","150M","1B"}
@@ -334,10 +324,58 @@ searchBox.ClearTextOnFocus = false
 
 local currentSearch = ""
 
+-- Auto-join state
+local autoJoinEnabled = false
+local isJoining       = false
+
+-- Min value per tab (used by auto-join)
+local FILTER_MIN = {
+    All      = 0,
+    ["15M"]  = 15000000,
+    ["50M"]  = 50000000,
+    ["150M"] = 150000000,
+    ["1B"]   = 1000000000,
+}
+
+-- Auto-join toggle button (full width, sits below search)
+local ajBtn = Instance.new("TextButton")
+ajBtn.Size = UDim2.new(1, -24, 0, 28)
+ajBtn.Position = UDim2.new(0, 12, 0, 140)
+ajBtn.Text = "⚡ AUTO JOIN: OFF  —  select a tab to set min tier"
+ajBtn.TextColor3 = TXT_DIM
+ajBtn.TextSize = 11
+ajBtn.Font = Enum.Font.GothamBold
+ajBtn.BorderSizePixel = 0
+ajBtn.BackgroundColor3 = Color3.fromRGB(20, 15, 35)
+ajBtn.Parent = content
+Instance.new("UICorner", ajBtn).CornerRadius = UDim.new(0, 8)
+local ajBtnStroke = Instance.new("UIStroke", ajBtn)
+ajBtnStroke.Color = BORDER2
+ajBtnStroke.Thickness = 1
+
+local function updateAutoJoinBtn()
+    if autoJoinEnabled then
+        ajBtn.Text = "⚡ AUTO JOIN: ON  —  min " .. currentFilter
+        ajBtn.BackgroundColor3 = Color3.fromRGB(0, 45, 20)
+        ajBtn.TextColor3 = Color3.fromRGB(52, 211, 153)
+        ajBtnStroke.Color = Color3.fromRGB(16, 100, 60)
+    else
+        ajBtn.Text = "⚡ AUTO JOIN: OFF  —  select a tab to set min tier"
+        ajBtn.BackgroundColor3 = Color3.fromRGB(20, 15, 35)
+        ajBtn.TextColor3 = TXT_DIM
+        ajBtnStroke.Color = BORDER2
+    end
+end
+
+ajBtn.MouseButton1Click:Connect(function()
+    autoJoinEnabled = not autoJoinEnabled
+    updateAutoJoinBtn()
+end)
+
 -- Scroll
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -24, 1, -170)
-scroll.Position = UDim2.new(0, 12, 0, 140)
+scroll.Size = UDim2.new(1, -24, 1, -202)
+scroll.Position = UDim2.new(0, 12, 0, 172)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
 scroll.ScrollBarThickness = 3
@@ -394,7 +432,7 @@ for r = 1, 2 do
     end
 end
 
--- Helper functions
+-- Get image url
 local function getImageUrl(brainrotName)
     local http = getHttp()
     if not http then return nil end
@@ -413,27 +451,22 @@ local function getImageUrl(brainrotName)
     end)
     if ok and result then
         local data = HttpService:JSONDecode(result.Body)
-        if data and #data > 0 then
-            return data[1].brainrot_imglink
-        end
+        if data and #data > 0 then return data[1].brainrot_imglink end
     end
     return nil
 end
 
--- Get user info from luarmor key
+-- Get user from luarmor key
 local cachedDiscordId = nil
 local cachedUsername  = nil
 local cachedUserId    = nil
 
 local function getUserFromKey()
     if cachedDiscordId then return cachedDiscordId, cachedUsername, cachedUserId end
-
     local http = getHttp()
     if not http then return nil, nil, nil end
-
     local scriptKey = getgenv().script_key or script_key
     if not scriptKey then return nil, nil, nil end
-
     local ok, result = pcall(function()
         return http({
             Url = SUPABASE_URL .. "/rest/v1/users?luarmor_key=eq." .. scriptKey .. "&select=id,discord_id,username",
@@ -445,7 +478,6 @@ local function getUserFromKey()
             }
         })
     end)
-
     if ok and result then
         local data = HttpService:JSONDecode(result.Body)
         if data and #data > 0 then
@@ -458,7 +490,7 @@ local function getUserFromKey()
     return nil, nil, nil
 end
 
--- Parse value string like "$9/s", "$1.5K/s", "$150M/s", "$1B/s" → number
+-- Parse value
 local function parseValue(str)
     if not str or str == "?" then return 0 end
     local num, suffix = str:match("%$([%d%.]+)([KkMmBb]?)")
@@ -472,7 +504,6 @@ local function parseValue(str)
     return math.floor(n)
 end
 
--- Map raw_value string → in-game TIER key (for card display)
 local function getTierKey(raw_value, rarity)
     if rarity and rarity:upper() == "OG" then return "og" end
     local v = parseValue(raw_value or "")
@@ -482,40 +513,34 @@ local function getTierKey(raw_value, rarity)
     return "low"
 end
 
--- Map rarity + value/s → website DB tier
--- Returns nil if below threshold (don't log)
 local function getDbTier(rarity, valuePerSec)
     if rarity and rarity:upper() == "OG" then return "og" end
-    if valuePerSec >= 1000000000  then return "best"      end  -- 1B+
-    if valuePerSec >= 150000000   then return "legendary"  end  -- 150M–1B
-    if valuePerSec >= 50000000    then return "high"       end  -- 50M–150M
-    return nil  -- below 50M, not logged
+    if valuePerSec >= 1000000000 then return "best"      end
+    if valuePerSec >= 150000000  then return "legendary" end
+    if valuePerSec >= 50000000   then return "high"      end
+    return nil
 end
 
 -- Send steal to database
 local function sendStealToDatabase(info)
     local http = getHttp()
     if not http then return end
-
     local valuePerSec = parseValue(info.value)
     local tier = getDbTier(info.rarity, valuePerSec)
-
     if not tier then return end
-
     local discordId, username, userId = getUserFromKey()
 
-    -- Insert into steals table (website stats, leaderboard, charts)
     if userId then
         task.spawn(function()
-            local ok, result = pcall(function()
-                return http({
+            pcall(function()
+                http({
                     Url = SUPABASE_URL .. "/rest/v1/steals",
                     Method = "POST",
                     Headers = {
-                        ["apikey"]        = SUPABASE_KEY,
+                        ["apikey"] = SUPABASE_KEY,
                         ["Authorization"] = "Bearer " .. SUPABASE_KEY,
-                        ["Content-Type"]  = "application/json",
-                        ["Prefer"]        = "return=minimal"
+                        ["Content-Type"] = "application/json",
+                        ["Prefer"] = "return=minimal"
                     },
                     Body = HttpService:JSONEncode({
                         user_id   = userId,
@@ -528,21 +553,19 @@ local function sendStealToDatabase(info)
                     })
                 })
             end)
-            _ = ok
         end)
     end
 
-    -- Insert into brainrot-steals for full raw record
     task.spawn(function()
         pcall(function()
             http({
                 Url = SUPABASE_URL .. "/rest/v1/brainrot-steals",
                 Method = "POST",
                 Headers = {
-                    ["apikey"]        = SUPABASE_KEY,
+                    ["apikey"] = SUPABASE_KEY,
                     ["Authorization"] = "Bearer " .. SUPABASE_KEY,
-                    ["Content-Type"]  = "application/json",
-                    ["Prefer"]        = "return=minimal"
+                    ["Content-Type"] = "application/json",
+                    ["Prefer"] = "return=minimal"
                 },
                 Body = HttpService:JSONEncode({
                     discord_id     = discordId or "unknown",
@@ -561,32 +584,29 @@ end
 local function sendStealWebhook(info)
     local http = getHttp()
     if not http then return end
-
-    -- Same threshold as DB — only log steals worth 50M/s+ (or OG rarity)
     local valuePerSec = parseValue(info.value)
     local tier = getDbTier(info.rarity, valuePerSec)
     if not tier then return end
-
     local imageUrl = getImageUrl(info.name)
     local unixTime = os.time()
     local mutationText = info.mutation ~= "None" and info.mutation or "None"
-    local _, discordId = getUserFromKey()
+    getUserFromKey()
     local pingId = cachedDiscordId or "unknown"
 
     local embedBody = {
-        content = "Stolen by: <@" .. pingId .. ">",
+        content = "<@" .. pingId .. ">",
         embeds = {{
             title  = "🎯 Brainrot Stolen!",
             color  = 5763719,
             fields = {
-                { name = "🐾 Name",     value = "**" .. info.name .. "**", inline = true  },
-                { name = "💰 Value",    value = "**" .. info.value .. "**", inline = true  },
-                { name = "✨ Mutation", value = mutationText,               inline = true  },
-                { name = "⭐ Rarity",   value = info.rarity,                inline = true  },
-                { name = "🏷️ Price",   value = info.price,                 inline = true  },
-                { name = "🕐 Time",    value = "<t:" .. unixTime .. ":R>", inline = true  },
+                { name = "🐾 Name",     value = "**" .. info.name .. "**",  inline = true },
+                { name = "💰 Value",    value = "**" .. info.value .. "**", inline = true },
+                { name = "✨ Mutation", value = mutationText,                inline = true },
+                { name = "⭐ Rarity",   value = info.rarity,                 inline = true },
+                { name = "🏷️ Price",   value = info.price,                  inline = true },
+                { name = "🕐 Time",    value = "<t:" .. unixTime .. ":R>",  inline = true },
             },
-            footer    = { text = "🤖 Grand Notifier • Steal Tracker • " },
+            footer    = { text = "🤖 Grand Notifier • Steal Tracker • " .. (cachedUsername or "Unknown") },
             thumbnail = imageUrl and { url = imageUrl } or nil
         }}
     }
@@ -611,9 +631,9 @@ local function sendStealWebhook(info)
     until success or retryCount >= maxRetries
 end
 
--- Session data (only brainrots found during this execution)
-local sessionData   = {}
-local lastSeenId    = 0
+-- Session data
+local sessionData = {}
+local lastSeenId  = 0
 
 -- Create card
 local function createCard(data, index)
@@ -624,7 +644,7 @@ local function createCard(data, index)
     card.Size = UDim2.new(1, 0, 0, 74)
     card.BackgroundColor3 = CARD_BG
     card.BorderSizePixel = 0
-    card.LayoutOrder = -index -- newest on top
+    card.LayoutOrder = -index
     card.Name = "Card_" .. tostring(data.id)
     card.Parent = scroll
     Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
@@ -632,7 +652,6 @@ local function createCard(data, index)
     cs.Color = BORDER2
     cs.Thickness = 1
 
-    -- Accent left bar
     local acc = Instance.new("Frame")
     acc.Size = UDim2.new(0, 3, 0.65, 0)
     acc.Position = UDim2.new(0, 0, 0.175, 0)
@@ -641,7 +660,6 @@ local function createCard(data, index)
     acc.Parent = card
     Instance.new("UICorner", acc).CornerRadius = UDim.new(0, 3)
 
-    -- Tier badge
     local bdg = Instance.new("Frame")
     bdg.Size = UDim2.new(0, 36, 0, 16)
     bdg.Position = UDim2.new(0, 12, 0, 10)
@@ -658,7 +676,6 @@ local function createCard(data, index)
     btxt.TextSize = 10
     btxt.Font = Enum.Font.GothamBold
 
-    -- Name
     local nameLbl = Instance.new("TextLabel")
     nameLbl.Size = UDim2.new(0, 210, 0, 20)
     nameLbl.Position = UDim2.new(0, 12, 0, 29)
@@ -671,7 +688,6 @@ local function createCard(data, index)
     nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
     nameLbl.Parent = card
 
-    -- Value
     local valLbl = Instance.new("TextLabel")
     valLbl.Size = UDim2.new(0, 210, 0, 14)
     valLbl.Position = UDim2.new(0, 12, 0, 51)
@@ -683,7 +699,6 @@ local function createCard(data, index)
     valLbl.TextXAlignment = Enum.TextXAlignment.Left
     valLbl.Parent = card
 
-    -- Join button
     local jbtn = Instance.new("TextButton")
     jbtn.Size = UDim2.new(0, 88, 0, 28)
     jbtn.Position = UDim2.new(1, -100, 0.5, -14)
@@ -703,21 +718,16 @@ local function createCard(data, index)
         if data.server_id then
             jbtn.Text = "..."
             jbtn.TextColor3 = CYAN
-
             local ok = pcall(function()
                 TeleportSvc:TeleportToPlaceInstance(SAB_PLACE_ID, data.server_id, player)
             end)
-
             if not ok then
-                -- Immediate pcall failure (bad args, etc.)
                 jbtn.Text = "FAIL"
                 jbtn.TextColor3 = Color3.fromRGB(239,68,68)
                 task.wait(2)
                 jbtn.Text = "JOIN"
                 jbtn.TextColor3 = PURPLE
             else
-                -- Teleport was initiated — reset after 6s if we're still here
-                -- (server full / server gone failures are async and won't pcall-catch)
                 task.delay(6, function()
                     if jbtn.Text == "..." then
                         jbtn.Text = "JOIN"
@@ -732,21 +742,34 @@ local function createCard(data, index)
         end
     end)
 
-    -- Catch async teleport failures (server full, server gone, etc.)
     TeleportSvc.TeleportInitFailed:Connect(function(plr, result, msg)
-        if plr == player and jbtn.Text == "..." then
+        if plr ~= player then return end
+        -- Manual join button feedback
+        if jbtn.Text == "..." then
             jbtn.Text = "FAIL"
             jbtn.TextColor3 = Color3.fromRGB(239,68,68)
             task.wait(2)
             jbtn.Text = "JOIN"
             jbtn.TextColor3 = PURPLE
         end
+        -- Auto-join: re-enable so it can catch the next brainrot
+        if isJoining then
+            isJoining       = false
+            autoJoinEnabled = true
+            updateAutoJoinBtn()
+            statusLbl.Text       = "Auto-join failed, watching..."
+            statusLbl.TextColor3  = Color3.fromRGB(239, 68, 68)
+            task.delay(3, function()
+                statusLbl.Text       = #sessionData .. " brainrot(s) this session"
+                statusLbl.TextColor3  = TXT_DIM
+            end)
+        end
     end)
 end
 
 -- Render
 local function tierMatchesFilter(tier, filter)
-    if filter == "All" then return true end
+    if filter == "All"  then return true end
     if filter == "15M"  then return tier == "low" end
     if filter == "50M"  then return tier == "high" end
     if filter == "150M" then return tier == "big" end
@@ -773,11 +796,7 @@ local function renderCards()
             count = count + 1
         end
     end
-    if count == 0 then
-        statusLbl.Text = "no brainrots found this session yet..."
-    else
-        statusLbl.Text = count .. " brainrot(s) this session"
-    end
+    statusLbl.Text = count > 0 and (count .. " brainrot(s) this session") or "no brainrots found this session yet..."
     statusLbl.TextColor3 = TXT_DIM
 end
 
@@ -798,19 +817,16 @@ local function updateStats()
     statNums.high.Text    = tostring(c.high)
 end
 
--- Fetch new brainrots since session start (polls every 3 seconds)
+-- Fetch new brainrots
 local function fetchNewBrainrots()
     local http = getHttp()
     if not http then return end
-
-    local url = SUPABASE_URL .. "/rest/v1/brainrots?select=*&order=id.asc&created_at=gte." 
+    local url = SUPABASE_URL .. "/rest/v1/brainrots?select=*&order=id.asc&created_at=gte."
         .. HttpService:UrlEncode(SESSION_START)
-
     if lastSeenId > 0 then
         url = SUPABASE_URL .. "/rest/v1/brainrots?select=*&order=id.asc&id=gt." .. lastSeenId
             .. "&created_at=gte." .. HttpService:UrlEncode(SESSION_START)
     end
-
     local ok, result = pcall(function()
         return http({
             Url = url,
@@ -822,17 +838,14 @@ local function fetchNewBrainrots()
             }
         })
     end)
-
     if ok and result then
         local body = result.Body or result.body or ""
         local pok, data = pcall(function() return HttpService:JSONDecode(body) end)
         if pok and type(data) == "table" and #data > 0 then
             local newCount = 0
             for _, d in ipairs(data) do
-                table.insert(sessionData, 1, d) -- newest first
-                if d.id > lastSeenId then
-                    lastSeenId = d.id
-                end
+                table.insert(sessionData, 1, d)
+                if d.id > lastSeenId then lastSeenId = d.id end
                 newCount = newCount + 1
             end
             if newCount > 0 then
@@ -844,12 +857,51 @@ local function fetchNewBrainrots()
                     statusLbl.Text = #sessionData .. " brainrot(s) this session"
                     statusLbl.TextColor3 = TXT_DIM
                 end)
+
+                -- Auto-join: pick best candidate from new arrivals
+                if autoJoinEnabled and not isJoining then
+                    local candidates = {}
+                    for _, d in ipairs(data) do
+                        local v      = tonumber(parseValue(d.raw_value or "")) or 0
+                        local isOg   = (d.rarity and d.rarity:upper() == "OG") == true
+                        local minVal = tonumber(FILTER_MIN[currentFilter]) or 0
+                        if (isOg or v >= minVal) and d.server_id then
+                            table.insert(candidates, { d = d, v = v, og = isOg })
+                        end
+                    end
+                    if #candidates > 0 then
+                        -- Sort: OG first, then highest value
+                        table.sort(candidates, function(a, b)
+                            if a.og ~= b.og then return a.og == true end
+                            return a.v > b.v
+                        end)
+                        local best = candidates[1].d
+                        isJoining       = true
+                        autoJoinEnabled = false
+                        updateAutoJoinBtn()
+                        statusLbl.Text      = "⚡ Auto-joining: " .. (best.name or "?")
+                        statusLbl.TextColor3 = Color3.fromRGB(52, 211, 153)
+                        local ok = pcall(function()
+                            TeleportSvc:TeleportToPlaceInstance(SAB_PLACE_ID, best.server_id, player)
+                        end)
+                        if not ok then
+                            -- Immediate failure — re-enable
+                            isJoining       = false
+                            autoJoinEnabled = true
+                            updateAutoJoinBtn()
+                            statusLbl.Text       = "Auto-join failed, retrying..."
+                            statusLbl.TextColor3  = Color3.fromRGB(239, 68, 68)
+                        else
+                            -- Async: clear joining lock after 6s
+                            task.delay(6, function() isJoining = false end)
+                        end
+                    end
+                end
             end
         end
     end
 end
 
--- Auto poll every 3 seconds
 task.spawn(function()
     while true do
         fetchNewBrainrots()
@@ -870,6 +922,7 @@ for _, name in ipairs(TABS) do
         tabBtns[name].BackgroundTransparency = 0
         tabBtns[name].TextColor3 = tabCol.txt
         renderCards()
+        updateAutoJoinBtn()
     end)
 end
 
@@ -939,24 +992,20 @@ local function updateCache()
                 local rarity      = overhead:FindFirstChild("Rarity")
                 local price       = overhead:FindFirstChild("Price")
                 local stolenLabel = overhead:FindFirstChild("Stolen")
-
                 if displayName and displayName.ContentText ~= "" then
                     local existing = templateCache[template]
                     local mutationFinal = "None"
                     local isStolen = false
-
                     if mutation and mutation.Visible and mutation.ContentText ~= "" then
                         mutationFinal = mutation.ContentText
                     elseif existing and existing.mutation ~= "None" then
                         mutationFinal = existing.mutation
                     end
-
                     if stolenLabel and stolenLabel.Visible and stolenLabel.ContentText == "STOLEN" then
                         isStolen = true
                     elseif existing and existing.isStolen then
                         isStolen = existing.isStolen
                     end
-
                     templateCache[template] = {
                         name     = displayName.ContentText,
                         value    = generation and generation.ContentText or "?",
@@ -982,8 +1031,7 @@ task.spawn(function()
 end)
 
 local function findBrainrot(targetName)
-    local stolenMatch = nil
-    local fallback    = nil
+    local stolenMatch, fallback = nil, nil
     for template, info in pairs(templateCache) do
         if info.name:lower() == targetName:lower() then
             if info.isStolen then
@@ -1006,18 +1054,15 @@ for _, v in pairs(net:GetChildren()) do
                     or { name = name, value = "?", mutation = "None", rarity = "?", price = "?" }
             end
         end)
-
         v.OnClientEvent:Connect(function(...)
             if #{...} == 0 and lastStolenInfo then
                 task.delay(0.1, function()
                     if not lastStolenInfo then return end
                     local i = lastStolenInfo
-
                     task.spawn(function()
                         sendStealToDatabase(i)
                         sendStealWebhook(i)
                     end)
-
                     lastStolenInfo = nil
                 end)
             end
@@ -1026,3 +1071,179 @@ for _, v in pairs(net:GetChildren()) do
 end
 
 statusLbl.Text = "watching for brainrots..."
+
+-- Grand user ESP
+local grandUsers   = {}
+local espInstances = {}
+
+local function fetchGrandUsers()
+    local http = getHttp()
+    if not http then return end
+    local ok, result = pcall(function()
+        return http({
+            Url = SUPABASE_URL .. "/rest/v1/active_users?select=roblox_id,username",
+            Method = "GET",
+            Headers = {
+                ["apikey"] = SUPABASE_KEY,
+                ["Authorization"] = "Bearer " .. SUPABASE_KEY,
+                ["Content-Type"] = "application/json"
+            }
+        })
+    end)
+    if ok and result then
+        local data = HttpService:JSONDecode(result.Body)
+        if data and type(data) == "table" then
+            grandUsers = {}
+            for _, u in ipairs(data) do
+                if u.roblox_id then
+                    grandUsers[tostring(u.roblox_id)] = u.username or "Unknown"
+                end
+            end
+        end
+    end
+end
+
+local function registerSelf()
+    local http = getHttp()
+    if not http then return end
+    pcall(function()
+        http({
+            Url = SUPABASE_URL .. "/rest/v1/active_users",
+            Method = "POST",
+            Headers = {
+                ["apikey"] = SUPABASE_KEY,
+                ["Authorization"] = "Bearer " .. SUPABASE_KEY,
+                ["Content-Type"] = "application/json",
+                ["Prefer"] = "resolution=merge-duplicates,return=minimal"
+            },
+            Body = HttpService:JSONEncode({
+                roblox_id  = tostring(player.UserId),
+                discord_id = cachedDiscordId or "unknown",
+                username   = player.Name,
+                updated_at = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            })
+        })
+    end)
+end
+
+local function removeESP(p)
+    if espInstances[p] then
+        pcall(function() espInstances[p].bill:Destroy() end)
+        pcall(function() espInstances[p].highlight:Destroy() end)
+        if espInstances[p].conn then
+            pcall(function() espInstances[p].conn:Disconnect() end)
+        end
+        espInstances[p] = nil
+    end
+end
+
+local function applyESP(p)
+    if not p.Character then return end
+    if espInstances[p] then return end
+
+    local char = p.Character
+    local hrp  = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        humanoid.NameDisplayDistance = 0
+    end
+
+    -- Highlight through walls
+    local highlight = Instance.new("Highlight")
+    highlight.Adornee = char
+    highlight.FillColor = PURPLE
+    highlight.OutlineColor = PURPLE
+    highlight.FillTransparency = 0.1
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = char
+
+    local bill = Instance.new("BillboardGui")
+    bill.Name = "GrandESP"
+    bill.Size = UDim2.new(0, 200, 0, 26)
+    bill.StudsOffset = Vector3.new(0, 3, 0)
+    bill.AlwaysOnTop = true
+    bill.Adornee = hrp
+    bill.Parent = CoreGui
+
+    -- Dark background
+    local bg = Instance.new("Frame", bill)
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(10, 5, 20)
+    bg.BackgroundTransparency = 0.2
+    bg.BorderSizePixel = 0
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 6)
+
+    local lbl = Instance.new("TextLabel", bg)
+    lbl.Size = UDim2.new(1, -8, 1, 0)
+    lbl.Position = UDim2.new(0, 8, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = "GRAND USER | " .. p.Name
+    lbl.TextColor3 = PURPLE
+    lbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    lbl.TextStrokeTransparency = 0.5
+    lbl.TextSize = 13
+    lbl.Font = Enum.Font.GothamBold
+
+    local conn = char.AncestryChanged:Connect(function()
+        if humanoid and humanoid.Parent then
+            humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Subject
+            humanoid.NameDisplayDistance = 100
+        end
+        removeESP(p)
+    end)
+
+    espInstances[p] = { bill = bill, highlight = highlight, conn = conn }
+end
+
+local function syncESP()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player then
+            local uid = tostring(p.UserId)
+            if grandUsers[uid] then
+                if p.Character then applyESP(p) end
+            else
+                removeESP(p)
+            end
+        end
+    end
+end
+
+local function setupPlayerESP(p)
+    p.CharacterAdded:Connect(function()
+        task.wait(1)
+        if grandUsers[tostring(p.UserId)] then
+            applyESP(p)
+        end
+    end)
+end
+
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= player then setupPlayerESP(p) end
+end
+
+Players.PlayerAdded:Connect(function(p)
+    setupPlayerESP(p)
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+    removeESP(p)
+end)
+
+task.spawn(function()
+    getUserFromKey()
+    registerSelf()
+    fetchGrandUsers()
+    syncESP()
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(30)
+        fetchGrandUsers()
+        syncESP()
+    end
+end)

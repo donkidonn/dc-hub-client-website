@@ -3,15 +3,8 @@ import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import supabase from '../db.js'
 import { requireAuth } from '../middleware/auth.js'
-import { luarmorPost } from '../luarmor.js'
 
 const router = Router()
-
-// Creates an inactive Luarmor key (auth_expire = 0) for a new user
-async function createInactiveLuarmorKey(discord_id) {
-  const data = await luarmorPost({ discord_id, auth_expire: 0 })
-  return data.user_key
-}
 
 // GET /auth/discord — redirect user to Discord OAuth
 router.get('/discord', (req, res) => {
@@ -55,30 +48,11 @@ router.get('/discord/callback', async (req, res) => {
       ? `https://cdn.discordapp.com/avatars/${discord_id}/${avatar}.png`
       : null
 
-    // Check if user already exists
-    const { data: existing } = await supabase
-      .from('users')
-      .select('id, luarmor_key')
-      .eq('discord_id', discord_id)
-      .maybeSingle()
-
-    let luarmor_key = existing?.luarmor_key ?? null
-
-    // New user — create an inactive Luarmor key for them
-    if (!existing) {
-      try {
-        luarmor_key = await createInactiveLuarmorKey(discord_id)
-      } catch (err) {
-        console.error('Failed to create Luarmor key for new user:', err.message)
-        // Don't block registration if Luarmor is down
-      }
-    }
-
     // Upsert user in Supabase
     const { data: user, error } = await supabase
       .from('users')
       .upsert(
-        { discord_id, username, avatar_url, ...(luarmor_key ? { luarmor_key } : {}) },
+        { discord_id, username, avatar_url },
         { onConflict: 'discord_id' }
       )
       .select()
