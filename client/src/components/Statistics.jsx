@@ -64,7 +64,9 @@ const TIER_COLOR_MAP = { og: '#f472b6', beyondbest: '#22d3ee', big: '#7c3aed', h
 
 function BrainrotRow({ row }) {
   const color = TIER_COLOR_MAP[row.tier] || '#7c3aed'
-  const diff  = Math.floor((Date.now() - new Date(row.created_at)) / 1000)
+  const ts    = row.created_at
+  const date  = new Date(ts && !ts.endsWith('Z') && !ts.includes('+') ? ts + 'Z' : ts)
+  const diff  = Math.floor((Date.now() - date) / 1000)
   const ago   = diff < 60 ? `${diff}s ago` : diff < 3600 ? `${Math.floor(diff/60)}m ago` : `${Math.floor(diff/3600)}h ago`
 
   return (

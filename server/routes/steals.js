@@ -270,19 +270,42 @@ router.get('/brainrots-stats', requireAuth, async (req, res) => {
 // GET /api/steals/brainrots-recent?tier=og|best|legendary — recent brainrot finds by tier
 router.get('/brainrots-recent', requireAuth, async (req, res) => {
   const TIER_MAP = { og: 'og', best: 'beyondbest', legendary: 'big' }
-  const dbTier = TIER_MAP[req.query.tier]
+  const VALUE_THRESHOLD = { best: 500e6, legendary: 50e6 }
+  const tier = req.query.tier
+  const dbTier = TIER_MAP[tier]
   if (!dbTier) return res.status(400).json({ error: 'Invalid tier' })
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('brainrots')
-    .select('id, name, tier, raw_value, created_at')
+    .select('id, name, tier, rarity, raw_value, created_at')
     .eq('tier', dbTier)
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(100)
 
+  if (tier === 'og') query = query.ilike('rarity', 'og')
+
+  const { data, error } = await query
   if (error) return res.status(500).json({ error: 'Failed to fetch' })
-  res.json(data)
+
+  const threshold = VALUE_THRESHOLD[tier]
+  const result = threshold
+    ? data.filter(r => parseRawValue(r.raw_value) > threshold)
+    : data
+
+  res.json(result.slice(0, 10))
 })
+
+function parseRawValue(raw) {
+  if (!raw) return 0
+  const match = raw.replace(/[$,]/g, '').match(/([\d.]+)\s*([KMBkmb]?)/i)
+  if (!match) return 0
+  const num = parseFloat(match[1])
+  const suffix = (match[2] || '').toUpperCase()
+  if (suffix === 'B') return num * 1e9
+  if (suffix === 'M') return num * 1e6
+  if (suffix === 'K') return num * 1e3
+  return num
+}
 
 // GET /api/deposits/history — current user's deposit history
 router.get('/deposits', requireAuth, async (req, res) => {
