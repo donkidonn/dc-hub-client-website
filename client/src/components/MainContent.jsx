@@ -365,11 +365,7 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
         {/* Error / Success */}
         {error && <p className="text-[11px] text-red-400 text-center">{error}</p>}
         {success && (
-          <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-xl"
-            style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
-            <span style={{ color: '#34d399', fontSize: 11 }}>✓</span>
-            <p className="text-[11px] font-semibold" style={{ color: '#34d399' }}>{success}</p>
-          </div>
+          <p className="text-[11px] font-semibold text-center" style={{ color: '#34d399' }}>✓ {success}</p>
         )}
 
         {/* CTA */}
