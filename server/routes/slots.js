@@ -184,7 +184,7 @@ router.post('/extend', requireAuth, async (req, res) => {
   // Get user info
   const { data: user } = await supabase
     .from('users')
-    .select('balance, discord_id, total_hours')
+    .select('balance, discord_id, luarmor_key, total_hours')
     .eq('id', req.user.id)
     .single()
 
