@@ -27,8 +27,13 @@ export function UserProvider({ children }) {
 
   useEffect(() => { fetchUser() }, [])
 
+  function logout() {
+    localStorage.removeItem('token')
+    setUser(null)
+  }
+
   return (
-    <UserContext.Provider value={{ user, setUser, loading, refreshUser: fetchUser }}>
+    <UserContext.Provider value={{ user, setUser, loading, refreshUser: fetchUser, logout }}>
       {children}
     </UserContext.Provider>
   )

@@ -106,7 +106,7 @@ function Avatar({ avatarUrl }) {
 
 export default function Sidebar({ activePage, onNavigate }) {
   const { animationsEnabled, toggleAnimations } = useContext(AnimationContext)
-  const { user: authUser, refreshUser } = useUser()
+  const { user: authUser, refreshUser, logout } = useUser()
   const [showDeposit, setShowDeposit]   = useState(false)
   const [couponCode, setCouponCode]     = useState('')
   const [couponState, setCouponState]   = useState(null) // null | 'loading' | { ok, msg }
@@ -372,6 +372,32 @@ export default function Sidebar({ activePage, onNavigate }) {
             </button>
           )
         })}
+
+        {/* Logout */}
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 text-left mt-1"
+          style={{
+            background: 'rgba(239,68,68,0.06)',
+            border: '1px solid rgba(239,68,68,0.15)',
+            color: 'rgba(252,165,165,0.5)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(239,68,68,0.12)'
+            e.currentTarget.style.color = 'rgba(252,165,165,0.9)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(239,68,68,0.06)'
+            e.currentTarget.style.color = 'rgba(252,165,165,0.5)'
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Log out
+        </button>
 
         {/* Animation toggle */}
         <div className="mt-1">
