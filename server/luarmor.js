@@ -22,7 +22,7 @@ export async function luarmorGet() {
   return data
 }
 
-export async function luarmorDelete(body) {
-  const { data } = await axios.delete(luarmorBase(), { data: body, headers: luarmorAuth(), httpsAgent: agent() })
+export async function luarmorDelete(user_key) {
+  const { data } = await axios.delete(`${luarmorBase()}?user_key=${user_key}`, { headers: luarmorAuth(), httpsAgent: agent() })
   return data
 }

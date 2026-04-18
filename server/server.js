@@ -5,6 +5,7 @@ import axios from 'axios'
 import rateLimit from 'express-rate-limit'
 import authRoutes from './routes/auth.js'
 import { luarmorPatch } from './luarmor.js'
+import { runSlotCleanup, scheduleSlotCleanup } from './slotCleanup.js'
 import balanceRoutes from './routes/balance.js'
 import slotsRoutes from './routes/slots.js'
 import stealsRoutes from './routes/steals.js'
@@ -114,33 +115,44 @@ app.get('/my-ip', async (req, res) => {
   }
 })
 
-// Slot expiry cleanup — runs every minute
-// Deactivates Luarmor keys and frees slots when they expire
+// On startup — reschedule active slots and clean up any already expired ones
+async function initSlotSchedules() {
+  const { data: activeSlots } = await supabase
+    .from('slots')
+    .select('id, user_id, expires_at, users ( luarmor_key )')
+    .not('user_id', 'is', null)
+    .not('expires_at', 'is', null)
+
+  if (!activeSlots?.length) return
+  console.log(`[STARTUP] Rescheduling ${activeSlots.length} active slot(s)`)
+
+  for (const slot of activeSlots) {
+    const luarmorKey = slot.users?.luarmor_key ?? null
+    if (new Date(slot.expires_at) <= new Date()) {
+      // Already expired during downtime — clean up immediately
+      await runSlotCleanup(slot.id, slot.user_id, luarmorKey)
+    } else {
+      scheduleSlotCleanup(slot.id, slot.user_id, luarmorKey, slot.expires_at)
+    }
+  }
+}
+
+initSlotSchedules()
+
+// Cron safety net — catches anything missed (e.g. setTimeout lost on crash)
 setInterval(async () => {
   const { data: expiredSlots, error } = await supabase
     .from('slots')
-    .select('id, users ( luarmor_key )')
+    .select('id, user_id, users ( luarmor_key )')
     .lt('expires_at', new Date().toISOString())
     .not('user_id', 'is', null)
 
-  if (error) { console.error('Slot cleanup fetch error:', error.message); return }
+  if (error) { console.error('[CRON] Fetch error:', error.message); return }
   if (!expiredSlots?.length) return
 
+  console.log(`[CRON] Safety net caught ${expiredSlots.length} missed slot(s)`)
   for (const slot of expiredSlots) {
-    // Deactivate Luarmor key
-    if (slot.users?.luarmor_key) {
-      try {
-        await luarmorPatch({ user_key: slot.users.luarmor_key, auth_expire: 1 })
-      } catch (err) {
-        console.error(`Failed to deactivate key for slot ${slot.id}:`, err.message)
-      }
-    }
-
-    // Free the slot in DB
-    await supabase
-      .from('slots')
-      .update({ user_id: null, expires_at: null })
-      .eq('id', slot.id)
+    await runSlotCleanup(slot.id, slot.user_id, slot.users?.luarmor_key ?? null)
   }
 }, 60 * 1000)
 

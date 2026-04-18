@@ -3,6 +3,7 @@ import axios from 'axios'
 import { requireAuth } from '../middleware/auth.js'
 import supabase from '../db.js'
 import { luarmorPost, luarmorPatch, luarmorGet } from '../luarmor.js'
+import { scheduleSlotCleanup } from '../slotCleanup.js'
 
 const router = Router()
 const PRICE_PER_HOUR = 1
@@ -163,6 +164,8 @@ router.post('/acquire', requireAuth, async (req, res) => {
     return res.status(500).json({ error: 'Failed to assign slot' })
   }
 
+  scheduleSlotCleanup(slot.id, req.user.id, user.luarmor_key, expires_at.toISOString())
+
   res.json({ slot, luarmor_key: user.luarmor_key })
 })
 
@@ -221,6 +224,8 @@ router.post('/extend', requireAuth, async (req, res) => {
     .eq('id', slot.id)
     .select()
     .single()
+
+  scheduleSlotCleanup(slot.id, req.user.id, user.luarmor_key, newExpiry.toISOString())
 
   res.json({ slot: updatedSlot })
 })
