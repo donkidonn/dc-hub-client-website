@@ -1,10 +1,17 @@
 import { Router } from 'express'
 import axios from 'axios'
 import jwt from 'jsonwebtoken'
+import rateLimit from 'express-rate-limit'
 import supabase from '../db.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
+
+const exchangeLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  handler: (req, res) => res.status(429).json({ error: 'Too many login attempts. Please wait.' }),
+})
 
 // Shared helper — exchange Discord code + upsert user + return JWT
 async function exchangeCodeForToken(code, redirectUri) {
@@ -61,7 +68,7 @@ router.get('/discord', (req, res) => {
 })
 
 // POST /auth/discord/exchange — frontend sends the code, we return a JWT
-router.post('/discord/exchange', async (req, res) => {
+router.post('/discord/exchange', exchangeLimit, async (req, res) => {
   const { code } = req.body
   if (!code) return res.status(400).json({ error: 'No code provided' })
 

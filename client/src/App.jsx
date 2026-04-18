@@ -270,6 +270,7 @@ function Dashboard() {
 // Handles the /auth?code=... redirect from Discord OAuth
 function AuthCallback() {
   const navigate = useNavigate()
+  const { refreshUser } = useUser()
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -282,12 +283,12 @@ function AuthCallback() {
       return
     }
 
-    // Clear code from URL immediately so re-renders can't re-use it
     window.history.replaceState({}, '', '/auth')
 
     api.post('/auth/discord/exchange', { code })
       .then(({ token }) => {
         localStorage.setItem('token', token)
+        refreshUser()
         navigate('/home', { replace: true })
       })
       .catch(err => {
