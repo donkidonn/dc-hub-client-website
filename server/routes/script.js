@@ -7,19 +7,19 @@ const router = Router()
 // Per-user join cooldown (userId -> lastJoinTimestamp)
 const joinCooldowns = new Map()
 
-// GET /api/script/brainrots?lastId=X&since=Y
+// GET /api/script/brainrots?lastId=X  or  ?limit=N (first load)
 router.get('/brainrots', requireScriptAuth, async (req, res) => {
-  const { lastId, since } = req.query
+  const { lastId, limit } = req.query
 
   let query = supabase
     .from('brainrots')
     .select('id, name, raw_value, rarity, mutation, price, created_at')
-    .order('id', { ascending: true })
 
   if (lastId) {
-    query = query.gt('id', parseInt(lastId))
-  } else if (since) {
-    query = query.gte('created_at', since)
+    query = query.gt('id', parseInt(lastId)).order('id', { ascending: true })
+  } else {
+    // First load — return most recent entries so hops don't miss anything
+    query = query.order('id', { ascending: false }).limit(parseInt(limit) || 20)
   }
 
   const { data, error } = await query
