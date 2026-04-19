@@ -11,6 +11,7 @@ import slotsRoutes from './routes/slots.js'
 import stealsRoutes from './routes/steals.js'
 import leaderboardRoutes from './routes/leaderboard.js'
 import adminRoutes from './routes/admin.js'
+import scriptRoutes from './routes/script.js'
 import supabase from './db.js'
 
 const app = express()
@@ -101,6 +102,7 @@ app.use('/api/slots', slotsRoutes)
 app.use('/api/steals', stealsRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/admin', adminRoutes)
+app.use('/api/script', scriptRoutes)
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }))

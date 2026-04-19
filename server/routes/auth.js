@@ -13,6 +13,12 @@ const exchangeLimit = rateLimit({
   handler: (req, res) => res.status(429).json({ error: 'Too many login attempts. Please wait.' }),
 })
 
+const scriptAuthLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  handler: (req, res) => res.status(429).json({ error: 'Too many auth attempts. Please wait.' }),
+})
+
 // Shared helper — exchange Discord code + upsert user + return JWT
 async function exchangeCodeForToken(code, redirectUri) {
   const tokenRes = await axios.post(
@@ -91,6 +97,42 @@ router.get('/me', requireAuth, async (req, res) => {
 
   if (error) return res.status(404).json({ error: 'User not found' })
   res.json(user)
+})
+
+// POST /auth/script — Luarmor key → short-lived script JWT
+router.post('/script', scriptAuthLimit, async (req, res) => {
+  const luarmorKey = req.headers['x-luarmor-key']
+  if (!luarmorKey) return res.status(401).json({ error: 'No key provided' })
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('id, discord_id, username, blacklisted')
+    .eq('luarmor_key', luarmorKey)
+    .single()
+
+  if (!user) return res.status(401).json({ error: 'Invalid key' })
+  if (user.blacklisted) return res.status(403).json({ error: 'Account suspended' })
+
+  const { data: slot } = await supabase
+    .from('slots')
+    .select('id')
+    .eq('user_id', user.id)
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle()
+
+  if (!slot) return res.status(403).json({ error: 'No active slot' })
+
+  const token = jwt.sign(
+    { id: user.id, discord_id: user.discord_id, type: 'script' },
+    process.env.JWT_SECRET,
+    { expiresIn: '5m' }
+  )
+
+  res.json({
+    token,
+    expires_in: 300,
+    user: { id: user.id, discord_id: user.discord_id, username: user.username }
+  })
 })
 
 export default router
