@@ -141,7 +141,19 @@ router.post('/acquire', requireAuth, async (req, res) => {
     } catch (err) {
       const errDetail = err.response?.data ?? err.message
       console.error('Luarmor activate error (status', err.response?.status, '):', JSON.stringify(errDetail))
-      return res.status(500).json({ error: 'Failed to activate script key' })
+      // Key no longer exists in Luarmor — create a fresh one
+      if (err.response?.status === 404) {
+        try {
+          const newKey = await createLuarmorKey(user.discord_id, auth_expire)
+          await supabase.from('users').update({ luarmor_key: newKey }).eq('id', req.user.id)
+          user.luarmor_key = newKey
+        } catch (createErr) {
+          console.error('Failed to recreate Luarmor key:', createErr.response?.data || createErr.message)
+          return res.status(500).json({ error: 'Failed to create your script key. Please try again.' })
+        }
+      } else {
+        return res.status(500).json({ error: 'Failed to activate script key' })
+      }
     }
   }
 
@@ -208,7 +220,18 @@ router.post('/extend', requireAuth, async (req, res) => {
     await activateLuarmorKey(user.luarmor_key, auth_expire)
   } catch (err) {
     console.error('Luarmor extend error:', err.response?.data || err.message)
-    return res.status(500).json({ error: 'Failed to extend script key' })
+    if (err.response?.status === 404) {
+      try {
+        const newKey = await createLuarmorKey(user.discord_id, auth_expire)
+        await supabase.from('users').update({ luarmor_key: newKey }).eq('id', req.user.id)
+        user.luarmor_key = newKey
+      } catch (createErr) {
+        console.error('Failed to recreate Luarmor key on extend:', createErr.response?.data || createErr.message)
+        return res.status(500).json({ error: 'Failed to create your script key. Please try again.' })
+      }
+    } else {
+      return res.status(500).json({ error: 'Failed to extend script key' })
+    }
   }
 
   // Deduct balance and increment total_hours
