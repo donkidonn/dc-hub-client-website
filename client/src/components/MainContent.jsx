@@ -370,22 +370,10 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
 
         {/* CTA */}
         <button
-          disabled={!canAct || loading}
-          onClick={handleAction}
+          disabled
           className="w-full py-2.5 rounded-xl text-sm font-black tracking-wide transition-all duration-200"
-          style={canAct
-            ? { background: 'linear-gradient(135deg, #7c3aed, #22d3ee)', color: '#fff', cursor: loading ? 'wait' : 'pointer', boxShadow: '0 4px 20px rgba(124,58,237,0.35)', opacity: loading ? 0.7 : 1 }
-            : { background: 'rgba(139,92,246,0.08)', color: 'rgba(139,92,246,0.35)', border: '1px solid rgba(139,92,246,0.15)', cursor: 'not-allowed' }
-          }>
-          {loading
-            ? 'Processing...'
-            : isGrandLocked
-              ? 'Coming Soon'
-              : hasActiveSlot
-                ? '⚡ Extend Slot'
-                : slotsAvail
-                  ? '⚡ Lock In Slot'
-                  : 'Unavailable'}
+          style={{ background: 'rgba(139,92,246,0.08)', color: 'rgba(139,92,246,0.35)', border: '1px solid rgba(139,92,246,0.15)', cursor: 'not-allowed' }}>
+          🔧 Under Maintenance
         </button>
 
         {/* Divider */}
