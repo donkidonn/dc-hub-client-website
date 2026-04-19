@@ -24,6 +24,7 @@ export async function runSlotCleanup(slotId, userId, luarmorKey) {
   if (error) console.error(`[CLEANUP] Failed to free slot ${slotId}:`, error.message)
   else console.log(`[CLEANUP] Slot ${slotId} freed`)
 
+  if (scheduled.has(slotId)) clearTimeout(scheduled.get(slotId))
   scheduled.delete(slotId)
 }
 
