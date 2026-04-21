@@ -103,36 +103,27 @@ router.get('/me', requireAuth, async (req, res) => {
 // POST /auth/script — Luarmor key → short-lived script JWT
 router.post('/script', scriptAuthLimit, async (req, res) => {
   const luarmorKey = req.headers['x-luarmor-key']
-  console.log('[/auth/script] key received:', luarmorKey ?? 'MISSING')
   if (!luarmorKey) return res.status(401).json({ error: 'No key provided' })
 
-  const { data: user, error: userError } = await supabase
+  const { data: user } = await supabase
     .from('users')
     .select('id, discord_id, username, blacklisted')
     .eq('luarmor_key', luarmorKey)
     .single()
 
-  console.log('[/auth/script] user lookup:', user ? `found id=${user.id}` : 'NOT FOUND', userError?.message ?? '')
   if (!user) return res.status(401).json({ error: 'Invalid key' })
   if (user.blacklisted) return res.status(403).json({ error: 'Account suspended' })
 
-  const { data: slot, error: slotError } = await supabase
+  const { data: slot } = await supabase
     .from('slots')
     .select('id')
     .eq('user_id', user.id)
     .gt('expires_at', new Date().toISOString())
     .maybeSingle()
 
-  console.log('[/auth/script] slot lookup:', slot ? `found id=${slot.id}` : 'NO SLOT', slotError?.message ?? '')
   if (!slot) return res.status(403).json({ error: 'No active slot' })
 
   const jti = crypto.randomUUID()
-
-  // Derive per-session signing secret from jti — stateless, no DB storage needed
-  const session_secret = crypto
-    .createHmac('sha256', process.env.SESSION_MASTER_KEY)
-    .update(jti)
-    .digest('hex')
 
   const token = jwt.sign(
     { id: user.id, discord_id: user.discord_id, type: 'script', jti },
@@ -147,7 +138,6 @@ router.post('/script', scriptAuthLimit, async (req, res) => {
 
   res.json({
     token,
-    session_secret,
     expires_in: 300,
     user: { id: user.id, discord_id: user.discord_id, username: user.username }
   })

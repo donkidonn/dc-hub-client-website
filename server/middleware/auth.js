@@ -67,7 +67,7 @@ export async function requireScriptAuth(req, res, next) {
     if (!sig) return res.status(401).json({ error: 'Missing signature' })
 
     const sessionSecret = crypto
-      .createHmac('sha256', process.env.SESSION_MASTER_KEY)
+      .createHmac('sha256', Buffer.from(process.env.SCRIPT_HMAC_SECRET, 'hex'))
       .update(decoded.jti)
       .digest('hex')
 
