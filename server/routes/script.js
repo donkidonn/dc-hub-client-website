@@ -23,7 +23,10 @@ router.get('/brainrots', requireScriptAuth, async (req, res) => {
   }
 
   const { data, error } = await query
-  if (error) return res.status(500).json({ error: 'Failed to fetch brainrots' })
+  if (error) {
+    console.error('[/api/script/brainrots] Supabase error:', error.message)
+    return res.status(500).json({ error: 'Failed to fetch brainrots' })
+  }
   res.json(data ?? [])
 })
 
