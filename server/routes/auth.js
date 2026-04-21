@@ -116,13 +116,14 @@ router.post('/script', scriptAuthLimit, async (req, res) => {
   if (!user) return res.status(401).json({ error: 'Invalid key' })
   if (user.blacklisted) return res.status(403).json({ error: 'Account suspended' })
 
-  const { data: slot } = await supabase
+  const { data: slot, error: slotError } = await supabase
     .from('slots')
     .select('id')
     .eq('user_id', user.id)
     .gt('expires_at', new Date().toISOString())
     .maybeSingle()
 
+  console.log('[/auth/script] slot lookup:', slot ? `found id=${slot.id}` : 'NO SLOT', slotError?.message ?? '')
   if (!slot) return res.status(403).json({ error: 'No active slot' })
 
   const jti = crypto.randomUUID()
