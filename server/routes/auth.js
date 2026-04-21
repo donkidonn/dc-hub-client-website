@@ -103,14 +103,16 @@ router.get('/me', requireAuth, async (req, res) => {
 // POST /auth/script — Luarmor key → short-lived script JWT
 router.post('/script', scriptAuthLimit, async (req, res) => {
   const luarmorKey = req.headers['x-luarmor-key']
+  console.log('[/auth/script] key received:', luarmorKey ?? 'MISSING')
   if (!luarmorKey) return res.status(401).json({ error: 'No key provided' })
 
-  const { data: user } = await supabase
+  const { data: user, error: userError } = await supabase
     .from('users')
     .select('id, discord_id, username, blacklisted')
     .eq('luarmor_key', luarmorKey)
     .single()
 
+  console.log('[/auth/script] user lookup:', user ? `found id=${user.id}` : 'NOT FOUND', userError?.message ?? '')
   if (!user) return res.status(401).json({ error: 'Invalid key' })
   if (user.blacklisted) return res.status(403).json({ error: 'Account suspended' })
 
