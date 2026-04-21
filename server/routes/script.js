@@ -13,7 +13,7 @@ router.get('/brainrots', requireScriptAuth, async (req, res) => {
 
   let query = supabase
     .from('brainrots')
-    .select('id, name, raw_value, rarity, mutation, price, created_at')
+    .select('id, name, raw_value, rarity, mutation, created_at')
 
   if (lastId) {
     query = query.gt('id', parseInt(lastId)).order('id', { ascending: true })
