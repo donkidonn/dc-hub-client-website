@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import supabase from '../db.js'
 
 export async function requireAuth(req, res, next) {
@@ -44,12 +45,13 @@ export async function requireScriptAuth(req, res, next) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, discord_id, username, blacklisted')
+      .select('id, discord_id, username, blacklisted, session_jti')
       .eq('id', decoded.id)
       .single()
 
     if (!user) return res.status(401).json({ error: 'User not found' })
     if (user.blacklisted) return res.status(403).json({ error: 'Account suspended' })
+    if (decoded.jti !== user.session_jti) return res.status(401).json({ error: 'Session invalidated' })
 
     const { data: slot } = await supabase
       .from('slots')
@@ -59,6 +61,25 @@ export async function requireScriptAuth(req, res, next) {
       .maybeSingle()
 
     if (!slot) return res.status(403).json({ error: 'No active slot' })
+
+    // Verify HMAC signature
+    const sig = req.headers['x-signature']
+    if (!sig) return res.status(401).json({ error: 'Missing signature' })
+
+    const sessionSecret = crypto
+      .createHmac('sha256', process.env.SESSION_MASTER_KEY)
+      .update(decoded.jti)
+      .digest('hex')
+
+    const body     = req.rawBody || ''
+    const payload  = `${timestamp}|${req.method.toUpperCase()}|${req.originalUrl}|${body}`
+    const expected = crypto.createHmac('sha256', Buffer.from(sessionSecret, 'hex'))
+      .update(payload)
+      .digest('hex')
+
+    let valid = false
+    try { valid = crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)) } catch {}
+    if (!valid) return res.status(401).json({ error: 'Invalid signature' })
 
     req.user = user
     next()

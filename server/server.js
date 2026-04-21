@@ -83,8 +83,10 @@ app.use(cors({
   credentials: true,
 }))
 
-// Parse JSON bodies
-app.use(express.json())
+// Parse JSON bodies — capture raw body for HMAC signature verification
+app.use(express.json({
+  verify: (req, res, buf) => { req.rawBody = buf.toString() }
+}))
 
 // Rate limiting — 100 requests per 15 minutes per IP
 app.use(rateLimit({

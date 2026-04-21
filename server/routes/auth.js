@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import axios from 'axios'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import rateLimit from 'express-rate-limit'
 import supabase from '../db.js'
 import { requireAuth } from '../middleware/auth.js'
@@ -122,14 +123,28 @@ router.post('/script', scriptAuthLimit, async (req, res) => {
 
   if (!slot) return res.status(403).json({ error: 'No active slot' })
 
+  const jti = crypto.randomUUID()
+
+  // Derive per-session signing secret from jti — stateless, no DB storage needed
+  const session_secret = crypto
+    .createHmac('sha256', process.env.SESSION_MASTER_KEY)
+    .update(jti)
+    .digest('hex')
+
   const token = jwt.sign(
-    { id: user.id, discord_id: user.discord_id, type: 'script' },
+    { id: user.id, discord_id: user.discord_id, type: 'script', jti },
     process.env.JWT_SECRET,
     { expiresIn: '5m' }
   )
 
+  await supabase
+    .from('users')
+    .update({ session_jti: jti })
+    .eq('id', user.id)
+
   res.json({
     token,
+    session_secret,
     expires_in: 300,
     user: { id: user.id, discord_id: user.discord_id, username: user.username }
   })
