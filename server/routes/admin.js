@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
 import { requireAdmin } from '../middleware/adminAuth.js'
 import { luarmorPatch } from '../luarmor.js'
+import { scheduleSlotCleanup, cancelAllScheduled } from '../slotCleanup.js'
 import supabase from '../db.js'
 
 const router = Router()
@@ -56,24 +57,8 @@ router.post('/pause', async (req, res) => {
 
   const now = new Date().toISOString()
 
-  // Get all active slots with their users' keys
-  const { data: activeSlots } = await supabase
-    .from('slots')
-    .select('id, expires_at, users ( luarmor_key )')
-    .gt('expires_at', now)
-    .not('user_id', 'is', null)
-
-  // Deactivate all active Luarmor keys
-  const errors = []
-  for (const slot of activeSlots ?? []) {
-    if (slot.users?.luarmor_key) {
-      try {
-        await luarmorPatch({ user_key: slot.users.luarmor_key, auth_expire: 1 })
-      } catch (err) {
-        errors.push(slot.users.luarmor_key)
-      }
-    }
-  }
+  // Cancel all cleanup timers so no slots get freed during the pause
+  cancelAllScheduled()
 
   // Record pause time
   await supabase
@@ -81,7 +66,7 @@ router.post('/pause', async (req, res) => {
     .update({ value: now })
     .eq('key', 'paused_at')
 
-  res.json({ ok: true, paused_at: now, failed_keys: errors })
+  res.json({ ok: true, paused_at: now })
 })
 
 // POST /admin/unpause — restore all keys with adjusted expiry
@@ -101,7 +86,7 @@ router.post('/unpause', async (req, res) => {
   // Get all slots that were active when paused
   const { data: slots } = await supabase
     .from('slots')
-    .select('id, expires_at, users ( luarmor_key )')
+    .select('id, user_id, expires_at, users ( luarmor_key )')
     .gt('expires_at', pausedAt.toISOString())
     .not('user_id', 'is', null)
 
@@ -124,6 +109,9 @@ router.post('/unpause', async (req, res) => {
         errors.push(slot.users.luarmor_key)
       }
     }
+
+    // Reschedule cleanup for the new expiry
+    scheduleSlotCleanup(slot.id, slot.user_id, slot.users?.luarmor_key ?? null, newExpiry.toISOString())
   }
 
   // Clear pause state
@@ -206,6 +194,8 @@ router.post('/users/:userId/adjust-time', async (req, res) => {
     .from('slots')
     .update({ expires_at: newExpiry.toISOString() })
     .eq('id', slot.id)
+
+  scheduleSlotCleanup(slot.id, slot.user_id, user.luarmor_key, newExpiry.toISOString())
 
   res.json({ ok: true, new_expires_at: newExpiry.toISOString() })
 })

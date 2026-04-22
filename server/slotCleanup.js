@@ -28,6 +28,14 @@ export async function runSlotCleanup(slotId, userId, luarmorKey) {
   scheduled.delete(slotId)
 }
 
+export function cancelAllScheduled() {
+  for (const [slotId, timeoutId] of scheduled) {
+    clearTimeout(timeoutId)
+    scheduled.delete(slotId)
+  }
+  console.log('[CLEANUP] All scheduled cleanups cancelled (system paused)')
+}
+
 export function scheduleSlotCleanup(slotId, userId, luarmorKey, expiresAt) {
   // Cancel existing timeout if rescheduling (e.g. on extend)
   if (scheduled.has(slotId)) {

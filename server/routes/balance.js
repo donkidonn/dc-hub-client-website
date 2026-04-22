@@ -148,18 +148,20 @@ router.get('/deposit/:paymentId/status', requireAuth, async (req, res) => {
         .eq('user_id', req.user.id)
         .maybeSingle()
 
-      if (deposit && deposit.status === 'pending') {
+      if (deposit) {
         const dbStatus = status === 'finished' ? 'confirmed' : status
-        await supabase.from('deposits').update({ status: dbStatus }).eq('id', deposit.id)
 
-        // Credit balance on first confirmation (same logic as webhook)
-        if (status === 'finished' || status === 'confirmed') {
-          const { data: user } = await supabase
-            .from('users').select('balance').eq('id', deposit.user_id).single()
-          await supabase
-            .from('users')
-            .update({ balance: Number(user.balance) + Number(deposit.amount) })
-            .eq('id', deposit.user_id)
+        // Atomic claim — update only if still pending, credit only if this request won
+        const { data: claimed } = await supabase
+          .from('deposits')
+          .update({ status: dbStatus })
+          .eq('id', deposit.id)
+          .eq('status', 'pending')
+          .select()
+          .single()
+
+        if (claimed && (status === 'finished' || status === 'confirmed')) {
+          await supabase.rpc('increment_balance', { user_id: deposit.user_id, amount: Number(deposit.amount) })
         }
       }
     }
@@ -206,24 +208,18 @@ router.post('/webhook', async (req, res) => {
 
     if (payment_status !== 'finished') return res.sendStatus(200)
 
+    // Atomic claim — only credits if this request wins the pending→confirmed transition
     const { data: deposit } = await supabase
       .from('deposits')
-      .select('*')
+      .update({ status: 'confirmed' })
       .eq('payment_id', String(payment_id))
       .eq('status', 'pending')
+      .select()
       .single()
 
     if (!deposit) return res.sendStatus(200)
 
-    await supabase.from('deposits').update({ status: 'confirmed' }).eq('id', deposit.id)
-
-    const { data: user } = await supabase
-      .from('users').select('balance').eq('id', deposit.user_id).single()
-
-    await supabase
-      .from('users')
-      .update({ balance: Number(user.balance) + Number(deposit.amount) })
-      .eq('id', deposit.user_id)
+    await supabase.rpc('increment_balance', { user_id: deposit.user_id, amount: Number(deposit.amount) })
 
     res.sendStatus(200)
   } catch (err) {

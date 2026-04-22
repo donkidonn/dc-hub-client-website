@@ -103,7 +103,9 @@ app.use('/api/balance', balanceRoutes)
 app.use('/api/slots', slotsRoutes)
 app.use('/api/steals', stealsRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
-app.use('/admin', adminRoutes)
+// TEMP: admin panel disabled — remove this line to re-enable
+app.use('/admin', (req, res) => res.status(404).json({ error: 'Not found' }))
+// app.use('/admin', adminRoutes)
 app.use('/api/script', scriptRoutes)
 
 // Health check
@@ -145,6 +147,10 @@ initSlotSchedules()
 
 // Cron safety net — catches anything missed (e.g. setTimeout lost on crash)
 setInterval(async () => {
+  const { data: pauseSetting } = await supabase
+    .from('system_settings').select('value').eq('key', 'paused_at').single()
+  if (pauseSetting?.value) return
+
   const { data: expiredSlots, error } = await supabase
     .from('slots')
     .select('id, user_id, users ( luarmor_key )')

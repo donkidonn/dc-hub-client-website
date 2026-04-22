@@ -79,9 +79,18 @@ router.get('/active-users', requireScriptAuth, async (req, res) => {
   const { data, error } = await supabase
     .from('active_users')
     .select('roblox_id, username')
+    .order('updated_at', { ascending: false })
 
   if (error) return res.status(500).json({ error: 'Failed to fetch users' })
-  res.json(data ?? [])
+
+  const seen = new Set()
+  const unique = (data ?? []).filter(u => {
+    if (seen.has(u.roblox_id)) return false
+    seen.add(u.roblox_id)
+    return true
+  })
+
+  res.json(unique)
 })
 
 // POST /api/script/active-users/register

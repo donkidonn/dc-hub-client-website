@@ -4,45 +4,6 @@ import supabase from '../db.js'
 
 const router = Router()
 
-// POST /api/steals — record a steal (called by Roblox script)
-// Identifies user by their luarmor_key
-router.post('/', async (req, res) => {
-  const { luarmor_key, item_name, tier, amount, mutation, rarity } = req.body
-  if (!luarmor_key || !item_name || !tier) {
-    return res.status(400).json({ error: 'luarmor_key, item_name and tier are required' })
-  }
-
-  // Find user by luarmor_key
-  const { data: user } = await supabase
-    .from('users')
-    .select('id')
-    .eq('luarmor_key', luarmor_key)
-    .maybeSingle()
-
-  if (!user) return res.status(404).json({ error: 'Invalid key' })
-
-  // Verify user has an active slot
-  const { data: slot } = await supabase
-    .from('slots')
-    .select('id')
-    .eq('user_id', user.id)
-    .gt('expires_at', new Date().toISOString())
-    .maybeSingle()
-
-  if (!slot) return res.status(403).json({ error: 'No active slot' })
-
-  const { error } = await supabase.from('steals').insert({
-    user_id: user.id,
-    item_name,
-    tier: tier.toLowerCase(),
-    amount: Number(amount) || 0,
-    mutation: mutation || null,
-    rarity: rarity || null,
-  })
-
-  if (error) return res.status(500).json({ error: 'Failed to record steal' })
-  res.json({ ok: true })
-})
 
 // GET /api/steals/recent — last 20 steals across all users (public, for live feed)
 router.get('/recent', async (req, res) => {

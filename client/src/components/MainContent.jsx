@@ -127,7 +127,7 @@ function ManualModal({ onClose }) {
     },
     {
       n: 2, title: 'Acquire a Slot',
-      body: 'Select Grand 1, choose how many hours you want, then click ⚡ Lock In Slot. The cost is $1/hr and is deducted from your balance instantly.',
+      body: 'Select Grand 1, choose how many hours you want, then click ⚡ Lock In Slot. The cost is $2/hr and is deducted from your balance instantly.',
       color: '#a855f7',
     },
     {
@@ -213,7 +213,7 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
 
   const hasActiveSlot = !!mySlot
   const isGrandLocked = grandId === 2
-  const pricePerHour  = 1
+  const pricePerHour  = 2
   const total         = hours * pricePerHour
   const canAct        = !isGrandLocked && (hasActiveSlot || slotsAvail)
 
@@ -370,10 +370,17 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
 
         {/* CTA */}
         <button
-          disabled
+          onClick={handleAction}
+          disabled={!canAct || loading}
           className="w-full py-2.5 rounded-xl text-sm font-black tracking-wide transition-all duration-200"
-          style={{ background: 'rgba(139,92,246,0.08)', color: 'rgba(139,92,246,0.35)', border: '1px solid rgba(139,92,246,0.15)', cursor: 'not-allowed' }}>
-          🔧 Under Maintenance
+          style={{
+            background: canAct && !loading ? 'linear-gradient(135deg, #a855f7, #7c3aed)' : 'rgba(139,92,246,0.08)',
+            color: canAct && !loading ? '#fff' : 'rgba(139,92,246,0.35)',
+            border: '1px solid rgba(139,92,246,0.15)',
+            cursor: canAct && !loading ? 'pointer' : 'not-allowed',
+            boxShadow: canAct && !loading ? '0 4px 15px rgba(168,85,247,0.3)' : 'none',
+          }}>
+          {loading ? 'Processing…' : hasActiveSlot ? '⚡ Extend Slot' : '⚡ Lock In Slot'}
         </button>
 
         {/* Divider */}

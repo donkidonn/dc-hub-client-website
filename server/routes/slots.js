@@ -6,7 +6,7 @@ import { luarmorPost, luarmorPatch, luarmorGet } from '../luarmor.js'
 import { scheduleSlotCleanup } from '../slotCleanup.js'
 
 const router = Router()
-const PRICE_PER_HOUR = 1
+const PRICE_PER_HOUR = 2
 
 // Create a Luarmor key with the actual expiry set immediately.
 // If the discord_id already exists in Luarmor, fetch their existing key and activate it.
@@ -76,6 +76,15 @@ router.post('/acquire', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'grand_id and hours (min 1) are required' })
   }
 
+  const { data: pauseSetting } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'paused_at')
+    .single()
+  if (pauseSetting?.value) {
+    return res.status(400).json({ error: 'System is currently under maintenance. Please try again later.' })
+  }
+
   if (Number(grand_id) === 2) {
     return res.status(400).json({ error: 'Grand 2 is coming soon and not available yet' })
   }
@@ -108,23 +117,19 @@ router.post('/acquire', requireAuth, async (req, res) => {
     return res.status(400).json({ error: `Insufficient balance. Need $${cost}, have $${user.balance}` })
   }
 
-  // Find an available slot in the requested grand
-  const { data: availableSlot } = await supabase
-    .from('slots')
-    .select('id')
-    .eq('grand_id', grand_id)
-    .is('user_id', null)
-    .limit(1)
-    .maybeSingle()
-
-  if (!availableSlot) {
-    return res.status(400).json({ error: 'No available slots in this Grand' })
-  }
-
   const expires_at = new Date(Date.now() + Number(hours) * 60 * 60 * 1000)
   const auth_expire = Math.floor(expires_at.getTime() / 1000)
 
-  // Auto-create a Luarmor key if the user doesn't have one yet (with expiry set immediately)
+  // Atomically claim a slot — no race possible, second request gets nothing
+  const { data: claimedSlots } = await supabase.rpc('claim_slot', {
+    p_grand_id: Number(grand_id),
+    p_user_id:  req.user.id,
+    p_expires_at: expires_at.toISOString(),
+  })
+  const slot = claimedSlots?.[0]
+  if (!slot) return res.status(400).json({ error: 'No available slots in this Grand' })
+
+  // Handle Luarmor key — release slot if this fails
   if (!user.luarmor_key) {
     try {
       const newKey = await createLuarmorKey(user.discord_id, auth_expire)
@@ -132,16 +137,15 @@ router.post('/acquire', requireAuth, async (req, res) => {
       user.luarmor_key = newKey
     } catch (err) {
       console.error('Failed to create Luarmor key:', err.response?.data || err.message)
+      await supabase.from('slots').update({ user_id: null, expires_at: null }).eq('id', slot.id)
       return res.status(500).json({ error: 'Failed to create your script key. Please try again.' })
     }
   } else {
-    // Activate existing key
     try {
       await activateLuarmorKey(user.luarmor_key, auth_expire)
     } catch (err) {
       const errDetail = err.response?.data ?? err.message
       console.error('Luarmor activate error (status', err.response?.status, '):', JSON.stringify(errDetail))
-      // Key no longer exists in Luarmor — create a fresh one
       if (err.response?.status === 404) {
         try {
           const newKey = await createLuarmorKey(user.discord_id, auth_expire)
@@ -149,9 +153,11 @@ router.post('/acquire', requireAuth, async (req, res) => {
           user.luarmor_key = newKey
         } catch (createErr) {
           console.error('Failed to recreate Luarmor key:', createErr.response?.data || createErr.message)
+          await supabase.from('slots').update({ user_id: null, expires_at: null }).eq('id', slot.id)
           return res.status(500).json({ error: 'Failed to create your script key. Please try again.' })
         }
       } else {
+        await supabase.from('slots').update({ user_id: null, expires_at: null }).eq('id', slot.id)
         return res.status(500).json({ error: 'Failed to activate script key' })
       }
     }
@@ -163,19 +169,6 @@ router.post('/acquire', requireAuth, async (req, res) => {
     .update({ balance: Number(user.balance) - cost, total_hours: (Number(user.total_hours) || 0) + Number(hours) })
     .eq('id', req.user.id)
 
-  // Assign slot
-  const { data: slot, error: slotErr } = await supabase
-    .from('slots')
-    .update({ user_id: req.user.id, expires_at: expires_at.toISOString() })
-    .eq('id', availableSlot.id)
-    .select()
-    .single()
-
-  if (slotErr) {
-    console.error('Slot assignment error:', slotErr.message)
-    return res.status(500).json({ error: 'Failed to assign slot' })
-  }
-
   scheduleSlotCleanup(slot.id, req.user.id, user.luarmor_key, expires_at.toISOString())
 
   res.json({ slot, luarmor_key: user.luarmor_key })
@@ -186,6 +179,15 @@ router.post('/extend', requireAuth, async (req, res) => {
   const { hours } = req.body
   if (!hours || Number(hours) < 1) {
     return res.status(400).json({ error: 'hours (min 1) is required' })
+  }
+
+  const { data: pauseSetting } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'paused_at')
+    .single()
+  if (pauseSetting?.value) {
+    return res.status(400).json({ error: 'System is currently under maintenance. Please try again later.' })
   }
 
   const cost = Number(hours) * PRICE_PER_HOUR
