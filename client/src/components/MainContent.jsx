@@ -380,7 +380,7 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
             cursor: canAct && !loading ? 'pointer' : 'not-allowed',
             boxShadow: canAct && !loading ? '0 4px 15px rgba(168,85,247,0.3)' : 'none',
           }}>
-          {'🔧 Under Maintenance '}
+          {'🔧 Under Maintenance'}
         </button>
 
         {/* Divider */}
