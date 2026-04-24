@@ -122,7 +122,8 @@ router.get('/chart', requireAuth, async (req, res) => {
   }
 
   steals?.forEach(({ tier, timestamp }) => {
-    const hoursAgo = Math.floor((Date.now() - new Date(timestamp)) / (60 * 60 * 1000))
+    const ts = timestamp.endsWith('Z') || timestamp.includes('+') ? timestamp : timestamp + 'Z'
+    const hoursAgo = Math.floor((Date.now() - new Date(ts)) / (60 * 60 * 1000))
     if (hoursAgo >= 0 && hoursAgo <= 23) {
       const b = buckets[hoursAgo]
       const t = tier?.toLowerCase()
@@ -151,7 +152,8 @@ router.get('/global-chart', requireAuth, async (req, res) => {
   }
 
   rows?.forEach(({ tier, created_at }) => {
-    const hoursAgo = Math.floor((Date.now() - new Date(created_at)) / (60 * 60 * 1000))
+    const ts = created_at.endsWith('Z') || created_at.includes('+') ? created_at : created_at + 'Z'
+    const hoursAgo = Math.floor((Date.now() - new Date(ts)) / (60 * 60 * 1000))
     if (hoursAgo >= 0 && hoursAgo <= 23) {
       const b = buckets[hoursAgo]
       const t = tier?.toLowerCase()
@@ -185,28 +187,25 @@ router.get('/global-stats', requireAuth, async (req, res) => {
 
 // GET /api/steals/brainrots-chart — last 24h hourly brainrot finds (for Statistics page chart)
 router.get('/brainrots-chart', requireAuth, async (req, res) => {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-
-  const { data: rows } = await supabase
-    .from('brainrots')
-    .select('tier, created_at')
-    .gte('created_at', since)
+  const { data: rows, error } = await supabase.rpc('brainrots_hourly_last_24h')
+  if (error) {
+    console.error('[brainrots-chart] RPC error:', error.message)
+    return res.status(500).json({ error: 'Failed to fetch chart data' })
+  }
 
   const buckets = {}
   for (let i = 23; i >= 0; i--) {
     buckets[i] = { time: i === 0 ? 'Now' : `-${i}h`, og: 0, legendary: 0, bestTier: 0, highTier: 0 }
   }
 
-  rows?.forEach(({ tier, created_at }) => {
-    const hoursAgo = Math.floor((Date.now() - new Date(created_at)) / (60 * 60 * 1000))
-    if (hoursAgo >= 0 && hoursAgo <= 23) {
-      const b = buckets[hoursAgo]
-      const t = tier?.toLowerCase()
-      if      (t === 'og')         b.og++
-      else if (t === 'beyondbest') b.bestTier++
-      else if (t === 'big')        b.legendary++
-      else if (t === 'high')       b.highTier++
-    }
+  rows?.forEach(({ hours_ago, tier, count }) => {
+    if (hours_ago < 0 || hours_ago > 23) return
+    const b = buckets[hours_ago]
+    const n = Number(count) || 0
+    if      (tier === 'og')         b.og += n
+    else if (tier === 'beyondbest') b.bestTier += n
+    else if (tier === 'big')        b.legendary += n
+    else if (tier === 'high')       b.highTier += n
   })
 
   res.json(Object.values(buckets).reverse())
@@ -214,16 +213,18 @@ router.get('/brainrots-chart', requireAuth, async (req, res) => {
 
 // GET /api/steals/brainrots-stats — tier counts from brainrots table (for Statistics KPI cards)
 router.get('/brainrots-stats', requireAuth, async (req, res) => {
-  const { data: rows } = await supabase.from('brainrots').select('tier')
-
+  const tierMap = { og: 'og', beyondbest: 'best', big: 'legendary', high: 'high' }
   const counts = { og: 0, best: 0, legendary: 0, high: 0 }
-  rows?.forEach(({ tier }) => {
-    const t = tier?.toLowerCase()
-    if      (t === 'og')         counts.og++
-    else if (t === 'beyondbest') counts.best++
-    else if (t === 'big')        counts.legendary++
-    else if (t === 'high')       counts.high++
-  })
+
+  await Promise.all(
+    Object.entries(tierMap).map(async ([dbTier, key]) => {
+      const { count } = await supabase
+        .from('brainrots')
+        .select('*', { count: 'exact', head: true })
+        .eq('tier', dbTier)
+      counts[key] = count ?? 0
+    })
+  )
 
   res.json(counts)
 })
