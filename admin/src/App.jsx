@@ -134,13 +134,27 @@ function AppInner() {
   )
 }
 
-export default function App() {
+function MaintenanceScreen() {
   return (
-    <UserProvider>
-      <Routes>
-        <Route path="/auth" element={<AuthCallback />} />
-        <Route path="/*"   element={<AppInner />} />
-      </Routes>
-    </UserProvider>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="max-w-[420px] w-full flex flex-col items-center gap-4 px-8 py-10 rounded-[14px] text-center"
+        style={{
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(18px)',
+          border: '1px solid rgba(168,85,247,0.25)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+        }}>
+        <div className="text-4xl">🛠</div>
+        <p className="eyebrow" style={{ color: 'rgba(168,85,247,0.8)' }}>Under Maintenance</p>
+        <h1 className="text-[22px] font-black text-white tracking-tight">Admin Panel Offline</h1>
+        <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(196,181,253,0.7)' }}>
+          The admin panel is temporarily unavailable. Please check back later.
+        </p>
+      </div>
+    </div>
   )
+}
+
+export default function App() {
+  return <MaintenanceScreen />
 }

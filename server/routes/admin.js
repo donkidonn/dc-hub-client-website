@@ -7,6 +7,8 @@ import supabase from '../db.js'
 
 const router = Router()
 
+router.use((req, res) => res.status(503).json({ error: 'Admin panel is currently under maintenance. Please try again later.' }))
+
 router.use(requireAuth, requireAdmin)
 
 // GET /admin/status — system pause state
