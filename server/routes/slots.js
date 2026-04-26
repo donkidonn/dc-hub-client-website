@@ -71,6 +71,8 @@ router.get('/my-slot', requireAuth, async (req, res) => {
 
 // POST /api/slots/acquire — buy a slot (activates the user's existing key)
 router.post('/acquire', requireAuth, async (req, res) => {
+  return res.status(503).json({ error: 'System is currently under maintenance. Please try again later.' })
+
   const { grand_id, hours } = req.body
   if (!grand_id || !hours || Number(hours) < 1) {
     return res.status(400).json({ error: 'grand_id and hours (min 1) are required' })
@@ -176,6 +178,8 @@ router.post('/acquire', requireAuth, async (req, res) => {
 
 // POST /api/slots/extend — add more hours (extends the key expiry)
 router.post('/extend', requireAuth, async (req, res) => {
+  return res.status(503).json({ error: 'System is currently under maintenance. Please try again later.' })
+
   const { hours } = req.body
   if (!hours || Number(hours) < 1) {
     return res.status(400).json({ error: 'hours (min 1) is required' })

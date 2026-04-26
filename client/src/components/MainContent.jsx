@@ -215,7 +215,7 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
   const isGrandLocked = grandId === 2
   const pricePerHour  = 2
   const total         = hours * pricePerHour
-  const canAct        = !isGrandLocked && (hasActiveSlot || slotsAvail)
+  const canAct        = false
 
   async function handleAction() {
     setLoading(true)
@@ -380,7 +380,7 @@ function AcquireSlot({ slots, mySlot, onSuccess }) {
             cursor: canAct && !loading ? 'pointer' : 'not-allowed',
             boxShadow: canAct && !loading ? '0 4px 15px rgba(168,85,247,0.3)' : 'none',
           }}>
-          {loading ? 'Processing…' : hasActiveSlot ? '⚡ Extend Slot' : '⚡ Lock In Slot'}
+          🛠 Under Maintenance
         </button>
 
         {/* Divider */}

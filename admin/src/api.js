@@ -21,6 +21,7 @@ async function request(url, options = {}) {
 const api = {
   get:  (url)       => request(url),
   post: (url, body) => request(url, { method: 'POST', body: JSON.stringify(body) }),
+  del:  (url)       => request(url, { method: 'DELETE' }),
 }
 
 export default api

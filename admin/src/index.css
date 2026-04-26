@@ -1,4 +1,158 @@
 @import "tailwindcss";
 
+/* ---------- Design tokens ---------- */
+:root {
+  /* Base surface */
+  --bg-base:        #000000;
+  --bg-elev-1:      #06070b;
+  --bg-elev-2:      #0a0c14;
+  --bg-elev-3:      #0e1220;
+
+  /* Accents */
+  --cyan:           #22d3ee;
+  --cyan-soft:      rgba(34,211,238,0.12);
+  --cyan-glow:      rgba(34,211,238,0.45);
+  --violet:         #a855f7;
+  --violet-soft:    rgba(168,85,247,0.14);
+  --violet-strong:  #7c3aed;
+  --magenta:        #f472b6;
+  --magenta-soft:   rgba(244,114,182,0.14);
+
+  /* Status */
+  --success:        #34d399;
+  --danger:         #f87171;
+  --warning:        #f59e0b;
+
+  /* Type */
+  --text-100:       #ffffff;
+  --text-80:        rgba(255,255,255,0.78);
+  --text-60:        rgba(196,181,253,0.62);
+  --text-40:        rgba(156,163,175,0.42);
+  --text-25:        rgba(156,163,175,0.25);
+
+  /* Lines */
+  --line-faint:     rgba(255,255,255,0.04);
+  --line-soft:      rgba(255,255,255,0.07);
+  --line-cyan:      rgba(34,211,238,0.22);
+  --line-violet:    rgba(168,85,247,0.22);
+
+  /* Type scale */
+  --display:        clamp(34px, 3.6vw, 46px);
+  --h1:             clamp(24px, 2.6vw, 30px);
+  --h2:             17px;
+  --body:           14.5px;
+  --small:          12.5px;
+  --micro:          11px;
+
+  /* Shadows */
+  --glow-cyan:      0 0 24px rgba(34,211,238,0.18);
+  --glow-violet:    0 0 24px rgba(168,85,247,0.22);
+
+  /* Radius */
+  --r-sm:  8px;
+  --r-md:  12px;
+  --r-lg:  16px;
+}
+
+/* ---------- Reset / base ---------- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #060912; color: #fff; font-family: system-ui, sans-serif; }
+html { color-scheme: dark; }
+
+body {
+  background:
+    radial-gradient(ellipse 800px 500px at 70% 0%,  rgba(34,211,238,0.05),  transparent 60%),
+    radial-gradient(ellipse 700px 600px at 0% 100%, rgba(168,85,247,0.05),  transparent 65%),
+    radial-gradient(circle 1px at 23% 17%,   rgba(255,255,255,0.6) 1px, transparent 2px),
+    radial-gradient(circle 1px at 67% 38%,   rgba(255,255,255,0.4) 1px, transparent 2px),
+    radial-gradient(circle 1px at 14% 73%,   rgba(255,255,255,0.5) 1px, transparent 2px),
+    radial-gradient(circle 1px at 88% 81%,   rgba(255,255,255,0.35) 1px, transparent 2px),
+    radial-gradient(circle 1px at 41% 92%,   rgba(255,255,255,0.45) 1px, transparent 2px),
+    var(--bg-base);
+  background-attachment: fixed;
+  color: var(--text-100);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: var(--body);
+  font-feature-settings: 'cv11','ss01','ss02';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
+  min-height: 100vh;
+}
+
+/* Mono for code/IDs/keys */
+.mono, code, kbd, pre {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-feature-settings: 'zero','ss01';
+  letter-spacing: 0;
+}
+
+/* ---------- Form controls ---------- */
+input, textarea, select, button { font: inherit; color: inherit; }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-100);
+  -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.03) inset;
+  caret-color: var(--cyan);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+input[type=datetime-local]::-webkit-calendar-picker-indicator,
+input[type=date]::-webkit-calendar-picker-indicator {
+  filter: invert(0.65) sepia(0.4) saturate(2) hue-rotate(155deg);
+  cursor: pointer;
+  opacity: 0.7;
+}
+input[type=datetime-local]::-webkit-calendar-picker-indicator:hover,
+input[type=date]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar          { width: 10px; height: 10px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    {
+  background: rgba(34,211,238,0.18);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34,211,238,0.4);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+::selection { background: rgba(34,211,238,0.35); color: #fff; }
+
+/* ---------- Reusable utility patterns ---------- */
+/* Glowing top edge for panels — fades from sides like the client site */
+.edge-glow-cyan::before,
+.edge-glow-violet::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 8%; right: 8%; height: 1px;
+  pointer-events: none;
+}
+.edge-glow-cyan::before   { background: linear-gradient(90deg, transparent, var(--cyan)   80%, transparent); box-shadow: 0 0 12px var(--cyan-glow); }
+.edge-glow-violet::before { background: linear-gradient(90deg, transparent, var(--violet) 80%, transparent); box-shadow: 0 0 12px rgba(168,85,247,0.4); }
+
+/* Shimmer on hover for nav/cards */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+.pulse { animation: pulse-soft 2.4s ease-in-out infinite; }
+
+/* Section eyebrow — tracked caps */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-40);
+  display: inline-block;
+}

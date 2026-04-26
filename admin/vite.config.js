@@ -7,8 +7,9 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      '/auth': 'http://localhost:3000',
-      '/admin': 'http://localhost:3000',
+      '/auth/discord': 'http://localhost:3000',
+      '/auth/me':      'http://localhost:3000',
+      '/admin':        'http://localhost:3000',
     },
   },
 })

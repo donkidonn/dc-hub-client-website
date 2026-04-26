@@ -88,6 +88,38 @@ router.post('/discord/exchange', exchangeLimit, async (req, res) => {
   }
 })
 
+// GET /auth/discord/admin — same as /auth/discord but uses the admin redirect URI
+router.get('/discord/admin', (req, res) => {
+  const params = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID,
+    redirect_uri: process.env.ADMIN_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'identify',
+  })
+  res.redirect(`https://discord.com/api/oauth2/authorize?${params}`)
+})
+
+// POST /auth/discord/admin/exchange — exchange admin OAuth code (uses admin redirect URI)
+router.post('/discord/admin/exchange', exchangeLimit, async (req, res) => {
+  const { code } = req.body
+  if (!code) return res.status(400).json({ error: 'No code provided' })
+
+  try {
+    const token = await exchangeCodeForToken(code, process.env.ADMIN_REDIRECT_URI)
+
+    const decoded  = jwt.verify(token, process.env.JWT_SECRET)
+    const adminIds = (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).filter(Boolean)
+    if (!adminIds.includes(String(decoded.discord_id))) {
+      return res.status(403).json({ error: 'Access denied — your Discord ID is not in the admin list.' })
+    }
+
+    res.json({ token })
+  } catch (err) {
+    console.error('Discord admin exchange error:', err.message)
+    res.status(401).json({ error: 'Authentication failed' })
+  }
+})
+
 // GET /auth/me — return current logged-in user
 router.get('/me', requireAuth, async (req, res) => {
   const { data: user, error } = await supabase

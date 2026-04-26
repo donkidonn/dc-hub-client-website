@@ -200,4 +200,121 @@ router.post('/users/:userId/adjust-time', async (req, res) => {
   res.json({ ok: true, new_expires_at: newExpiry.toISOString() })
 })
 
+// POST /admin/users/:userId/adjust-balance — credit/debit user balance ($). amount can be negative.
+router.post('/users/:userId/adjust-balance', async (req, res) => {
+  const { userId } = req.params
+  const { amount } = req.body
+
+  const n = Number(amount)
+  if (isNaN(n) || n === 0) {
+    return res.status(400).json({ error: 'amount is required and must be non-zero' })
+  }
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('balance')
+    .eq('id', userId)
+    .single()
+
+  if (!user) return res.status(404).json({ error: 'User not found' })
+
+  const newBalance = Math.max(0, Number(user.balance) + n)
+
+  await supabase.from('users').update({ balance: newBalance }).eq('id', userId)
+
+  res.json({ ok: true, new_balance: newBalance })
+})
+
+// GET /admin/overview — KPI summary
+router.get('/overview', async (req, res) => {
+  const now = new Date().toISOString()
+
+  const [usersRes, slotsRes, balanceRes, couponsRes] = await Promise.all([
+    supabase.from('users').select('*', { count: 'exact', head: true }),
+    supabase.from('slots').select('*', { count: 'exact', head: true }).gt('expires_at', now).not('user_id', 'is', null),
+    supabase.from('users').select('balance'),
+    supabase.from('coupons').select('expires_at, uses, max_uses'),
+  ])
+
+  const totalBalance = (balanceRes.data ?? []).reduce((sum, u) => sum + Number(u.balance || 0), 0)
+  const activeCoupons = (couponsRes.data ?? []).filter(c =>
+    (!c.expires_at || new Date(c.expires_at) > new Date()) && c.uses < c.max_uses
+  ).length
+
+  res.json({
+    total_users:    usersRes.count ?? 0,
+    active_slots:   slotsRes.count ?? 0,
+    total_balance:  Number(totalBalance.toFixed(2)),
+    active_coupons: activeCoupons,
+  })
+})
+
+// GET /admin/coupons — list all coupons
+router.get('/coupons', async (req, res) => {
+  const { data, error } = await supabase
+    .from('coupons')
+    .select('id, code, amount, max_uses, uses, expires_at, created_at')
+    .order('created_at', { ascending: false })
+
+  if (error) return res.status(500).json({ error: 'Failed to fetch coupons' })
+  res.json(data ?? [])
+})
+
+// POST /admin/coupons — create a coupon
+router.post('/coupons', async (req, res) => {
+  const { code, amount, max_uses, expires_at } = req.body
+
+  const trimmedCode = String(code || '').trim().toUpperCase()
+  if (!trimmedCode) return res.status(400).json({ error: 'code is required' })
+  if (trimmedCode.length > 32) return res.status(400).json({ error: 'code too long (max 32 chars)' })
+
+  const amt = Number(amount)
+  if (isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'amount must be > 0' })
+
+  const uses = Number(max_uses)
+  if (!Number.isInteger(uses) || uses < 1) return res.status(400).json({ error: 'max_uses must be a positive integer' })
+
+  const expiry = expires_at ? new Date(expires_at) : null
+  if (expires_at && isNaN(expiry.getTime())) return res.status(400).json({ error: 'invalid expires_at' })
+
+  const { data, error } = await supabase
+    .from('coupons')
+    .insert({
+      code: trimmedCode,
+      amount: amt,
+      max_uses: uses,
+      uses: 0,
+      expires_at: expiry ? expiry.toISOString() : null,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    if (error.code === '23505') return res.status(400).json({ error: 'Code already exists' })
+    return res.status(500).json({ error: 'Failed to create coupon' })
+  }
+
+  res.json(data)
+})
+
+// DELETE /admin/coupons/:id — delete a coupon
+router.delete('/coupons/:id', async (req, res) => {
+  const { id } = req.params
+  const { error } = await supabase.from('coupons').delete().eq('id', id)
+  if (error) return res.status(500).json({ error: 'Failed to delete coupon' })
+  res.json({ ok: true })
+})
+
+// GET /admin/coupons/:id/redemptions — who redeemed this coupon
+router.get('/coupons/:id/redemptions', async (req, res) => {
+  const { data, error } = await supabase
+    .from('coupon_redemptions')
+    .select('id, redeemed_at, users ( id, discord_id, username, avatar_url )')
+    .eq('coupon_id', req.params.id)
+    .order('redeemed_at', { ascending: false })
+
+  if (error) return res.status(500).json({ error: 'Failed to fetch redemptions' })
+  res.json(data ?? [])
+})
+
 export default router
